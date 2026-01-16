@@ -1,5 +1,5 @@
 
-# DNN for cattle weight gain
+# Dense Neural Network for poker hand classification
 
 A DNN for predict and classify the weight gain in beef cattle using my own dataset.
 
@@ -33,10 +33,13 @@ Install dependencies
 ```bash
   pip install -r /path/to/requirements.txt
 ```
-Open a code editor (VSCODE exemple)
+
+Open your favorite code editor (VSCODE exemple)
+
 ```bash
   code .
 ```
+
 
 ## Authors
 

@@ -7,6 +7,15 @@ The dataset was constructed using data from two farms in the Bambuí-MG region.
 Having 205 samples.
 
 
+## Requirements
+
+- Python 3.11
+- Numpy
+- Seaborn
+- Pandas
+- Matplotlib
+- Pytorch
+- Sklearn
 ## Run Locally
 
 Clone the project
@@ -24,7 +33,7 @@ Go to the project directory
 Create and activate a new conda envoriment
 
 ```bash
-  conda create my_env 
+  conda create my_env python=3.11
   conta activate my_env
 ```
 

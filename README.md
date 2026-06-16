@@ -11,7 +11,7 @@ A Dense Neural Network that predicts and classifies the **Average Daily Gain (GM
 
 - **Samples** collected from two farms in the Bambuí-MG region
 - **19 input features** after One-Hot Encoding, including animal attributes, pasture type, supplementation, health events, and climate data
-- **Target:** `saida_gmd_kg_dia` — daily weight gain in kg/day
+- **Target:** `adg_kg_day` — daily weight gain in kg/day
 
 Raw data lives in `data/cattle_dataset.csv`.
 
@@ -28,13 +28,13 @@ Raw data lives in `data/cattle_dataset.csv`.
 `support_scripts/processar_formulario.py` converts a Google Forms CSV export into a model-ready dataset.
 
 **Automatic transformations:**
-- Birth date + weighing date → `idade_dias`
-- Breed → `proporcao_bos_indicus_pct`
-- Forage species + season → `proteina_bruta_forragem_pct`, `digestibilidade_forragem_pct`
-- Entry date + weighing date → `dias_permanecia`
-- NASA POWER API (evaluation period) → `temperatura_media_c`, `precipitacao_acumulada_mm`
-- Health event date → `dias_desde_evento_sanitario`
-- Exit weight − initial weight / days → `saida_gmd_kg_dia`
+- Birthdate + weighing date → `age_days`
+- Breed → `bos_indicus_proportion_pct`
+- Forage species + season → `forage_crude_protein_pct`, `forage_digestibility_pct`
+- Entry date + weighing date → `days_on_pasture`
+- NASA POWER API (evaluation period) → `mean_temperature_c`, `accumulated_rainfall_mm`
+- Health event date → `days_since_health_event`
+- Exit weight − initial weight / days → `adg_kg_day`
 
 **Usage:**
 ```bash

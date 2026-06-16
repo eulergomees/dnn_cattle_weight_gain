@@ -17,13 +17,6 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="/support_scripts/dataset_gmd_20260616.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
         <entry key="\data\cattle_gain.csv">
           <value>
             <Attribute>

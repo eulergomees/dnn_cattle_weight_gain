@@ -1,4 +1,4 @@
-peso_inicial_kg,idade_dias,sexo_macho,proporcao_bos_indicus_pct,quantidade_suplemento_kg_dia,pb_suplemento_pct,energia_metabolizavel_suplemento,frequencia_suplementacao_dias_semana,proteina_bruta_forragem_pct,digestibilidade_forragem_pct,dias_permanecia,rotacao_piquete,estresse_transporte,temperatura_media_c,precipitacao_acumulada_mm,dias_desde_evento_sanitario,duracao_evento_sanitario_dias,vacina_recente,vermifugacao_recente,saida_gmd_kg_dia
+initial_weight_kg,age_days,sex_male,bos_indicus_proportion_pct,supplement_amount_kg_day,supplement_crude_protein_pct,supplement_metabolizable_energy,supplementation_frequency_days_week,forage_crude_protein_pct,forage_digestibility_pct,days_on_pasture,paddock_rotation,transport_stress,mean_temperature_c,accumulated_rainfall_mm,days_since_health_event,health_event_duration_days,recent_vaccination,recent_deworming,adg_kg_day
 185,620,0,50,0.248,30,2,7,10.42,61.2,381,1,1,29,47.8,0,0,0,0,0.330708661417323
 168,620,0,50,0.248,30,2,7,10.42,61.2,450,1,1,29,47.8,0,0,0,0,0.328888888888889
 153,620,0,50,0.248,30,2,7,10.42,61.2,450,1,1,29,47.8,0,0,0,0,0.317777777777778

@@ -1,56 +1,75 @@
+# DNN for Cattle Average Daily Gain (GMD) Prediction
 
-# Dense Neural Network for poker hand classification
+A Dense Neural Network that predicts and classifies the **Average Daily Gain (GMD, kg/day)** of beef cattle, built with PyTorch.
 
-A DNN for predict and classify the weight gain in beef cattle using my own dataset.
+> Academic project — INSTITUTO FEDERAL DE MINAS GERAIS, Departamento de Engenharia e Computação  
+> **Professor:** Ciniro Nametala | **Student:** Euler Gomes
 
-The dataset was constructed using data from two farms in the Bambuí-MG region.
-Having 205 samples.
+---
 
+## Dataset
+
+- **Samples** collected from two farms in the Bambuí-MG region
+- **19 input features** after One-Hot Encoding, including animal attributes, pasture type, supplementation, health events, and climate data
+- **Target:** `saida_gmd_kg_dia` — daily weight gain in kg/day
+
+Raw data lives in `data/cattle_dataset.csv`.
+
+---
+
+## Model
+
+`GMDNN` — in progress...
+
+---
+
+## Data Processing Script
+
+`support_scripts/processar_formulario.py` converts a Google Forms CSV export into a model-ready dataset.
+
+**Automatic transformations:**
+- Birth date + weighing date → `idade_dias`
+- Breed → `proporcao_bos_indicus_pct`
+- Forage species + season → `proteina_bruta_forragem_pct`, `digestibilidade_forragem_pct`
+- Entry date + weighing date → `dias_permanecia`
+- NASA POWER API (evaluation period) → `temperatura_media_c`, `precipitacao_acumulada_mm`
+- Health event date → `dias_desde_evento_sanitario`
+- Exit weight − initial weight / days → `saida_gmd_kg_dia`
+
+**Usage:**
+```bash
+python support_scripts/processar_formulario.py data.csv
+python support_scripts/processar_formulario.py data.csv --sem-clima  # skip climate fetch
+```
+
+---
 
 ## Requirements
 
 - Python 3.11
-- Numpy
-- Seaborn
-- Pandas
-- Matplotlib
-- Pytorch
-- Sklearn
-## Run Locally
+- PyTorch (CUDA 13 recommended)
+- NumPy, Pandas, Scikit-learn
+- Matplotlib, Seaborn
+- pygame, torchinfo
 
-Clone the project
+---
 
-```bash
-  git clone https://github.com/eulergomees/dnn_cattle_weight_gain.git
-```
-
-Go to the project directory
+## Setup
 
 ```bash
-  cd dnn_cattle_weight_gain
+git clone https://github.com/eulergomees/dnn_cattle_weight_gain.git
+cd dnn_cattle_weight_gain
+
+conda create -n cattle_env python=3.11
+conda activate cattle_env
+
+pip install -r requirements.txt
 ```
 
-Create and activate a new conda envoriment
+Open `dnn_cattle_weight_gain.ipynb` in Jupyter or your IDE and run all cells.
 
-```bash
-  conda create my_env python=3.11
-  conta activate my_env
-```
-
-Install dependencies
-
-```bash
-  pip install -r /path/to/requirements.txt
-```
-
-Open your favorite code editor (VSCODE exemple)
-
-```bash
-  code .
-```
-
+---
 
 ## Authors
 
-- [@eulergomees](https://github.com/eulergomees)
-
+- [@eulergomees](https://github.com/eulergomees) — Euler Gomes

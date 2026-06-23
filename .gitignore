@@ -3,3 +3,5 @@
 out
 gen
 .idea
+.vscode
+support_scripts/eda_gmd.ipynb

@@ -1,14 +1,14 @@
 # Fdb version 4
-["biber slides"] 1783350516.02847 "slides.bcf" "slides.bbl" "slides" 1783514052.72355 0
+["biber slides"] 1783350516.02847 "slides.bcf" "slides.bbl" "slides" 1783525047.51802 0
   "referencias.bib" 1783342846.93663 22152 ec1fee9d8b3917950deb20f306f5a06f ""
-  "slides.bcf" 1783514052.65761 115420 326a1607cd84bceb11a4e3019aa87d92 "pdflatex"
+  "slides.bcf" 1783525047.4508 115420 326a1607cd84bceb11a4e3019aa87d92 "pdflatex"
   (generated)
   "slides.bbl"
   "slides.blg"
   (rewritten before read)
-["pdflatex"] 1783514051.00164 "/home/euler/Workspace/Python/dnn_cattle_weight_gain/slides_tcc/slides.tex" "slides.pdf" "slides" 1783514052.72375 0
+["pdflatex"] 1783525045.87378 "/home/euler/Workspace/Python/dnn_cattle_weight_gain/slides_tcc/slides.tex" "slides.pdf" "slides" 1783525047.51824 0
   "/etc/texmf/web2c/texmf.cnf" 1783172025.60994 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/euler/Workspace/Python/dnn_cattle_weight_gain/slides_tcc/slides.tex" 1783514050.80064 14941 431b2653ab2d3b01565d8715cd3d0082 ""
+  "/home/euler/Workspace/Python/dnn_cattle_weight_gain/slides_tcc/slides.tex" 1783525045.72818 14768 46f9104cecf28b0550fb791667b8e653 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/helvetic/phvb8r.tfm" 1136768653 4484 b828043cbd581d289d955903c1339981 ""
@@ -298,14 +298,14 @@
   "figuras/eda_gmd_dist.pdf" 1783350250.27902 14822 5b184cd7e179ccb67f650ea4a437ec20 ""
   "ifslides2024.sty" 1783339661 6776 989df6679d8de1dd2c3c37f5664d2546 ""
   "logoif.pdf" 1783339662 18403 68b02b5ba37dc21f9c364609da4a1705 ""
-  "slides.aux" 1783514052.65361 10035 10e6803bc9e0cdbdf126bb5589a0f6e4 "pdflatex"
+  "slides.aux" 1783525047.4478 10035 10e6803bc9e0cdbdf126bb5589a0f6e4 "pdflatex"
   "slides.bbl" 1783350516.50258 24470 7cbe42862dd394ed940d0c7ede3ebe9a "biber slides"
-  "slides.nav" 1783514052.65882 4217 6f17d172b084cc2d3d6dc9ae3e8180ce "pdflatex"
-  "slides.out" 1783514052.65561 1665 40399779c2a1412f1aac1b72094b5df3 "pdflatex"
-  "slides.run.xml" 1783514052.65882 2458 db95e1fc1bb183efdf020a2e6133d7cc "pdflatex"
-  "slides.tex" 1783514050.80064 14941 431b2653ab2d3b01565d8715cd3d0082 ""
-  "slides.toc" 1783514052.65882 716 9de2bbbd223035acf2f7a7a62dd6845f "pdflatex"
-  "slides.vrb" 1783514052.64025 208 d737cb78119c9a9b6a61b255c225e505 "pdflatex"
+  "slides.nav" 1783525047.45237 4217 6f17d172b084cc2d3d6dc9ae3e8180ce "pdflatex"
+  "slides.out" 1783525047.4488 1665 40399779c2a1412f1aac1b72094b5df3 "pdflatex"
+  "slides.run.xml" 1783525047.45237 2458 db95e1fc1bb183efdf020a2e6133d7cc "pdflatex"
+  "slides.tex" 1783525045.72818 14768 46f9104cecf28b0550fb791667b8e653 ""
+  "slides.toc" 1783525047.45237 716 9de2bbbd223035acf2f7a7a62dd6845f "pdflatex"
+  "slides.vrb" 1783525047.43406 208 d737cb78119c9a9b6a61b255c225e505 "pdflatex"
   (generated)
   "slides.aux"
   "slides.bcf"

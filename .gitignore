@@ -6,3 +6,4 @@ gen
 .vscode
 support_scripts/eda_gmd.ipynb
 .claude
+__pycache__/

@@ -14,7 +14,7 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 
 - `data/dataset_por_animal_modelo_v3.csv` — **o dataset** (schema por-animal, alvo `gmd_kg_dia`). Detalhes em "Nova versão do dataset (por animal)".
 - `support_scripts/ingest_sheet.py` — **ingestão de folha de campo manuscrita → v3**: recebe as linhas transcritas + constantes da fazenda, valida consistência (ganho=saída−entrada, gmd=ganho/dias), deriva clima (NASA POWER) e anexa. `import ingest_sheet as ing; ing.ingest(animais, fazenda, dry_run=True)`.
-- `support_scripts/data_prep.py` — módulo de pré-processamento compartilhado dos notebooks de comparação (split, KFold(10), seleção de features, métricas MAE/RMSE/R², `save_result`). **⚠️ Ainda no schema antigo — reescrever para o v3** (alvo `gmd_kg_dia`, split das 2 propriedades). Uso: `sys.path.append("support_scripts"); import data_prep as dp`.
+- `support_scripts/data_prep.py` — módulo de pré-processamento compartilhado (**schema v3**): `get_data` (8 preditores, alvo `gmd_kg_dia`; dropa ids + `peso_saida_kg` + 4 constantes + `precipitacao_acumulada_mm`), `get_cv` (KFold 10 p/ tuning), `leave_one_property_out` (Elvis↔Sonico p/ robustez), `augment_train` (jitter = ruído de medição, só treino), métricas e `save_result`. Scaling fica nos notebooks (fit só no treino). Uso: `sys.path.append("support_scripts"); import data_prep as dp; d = dp.get_data()`.
 - `eda_gmd.ipynb` — **EDA** do dataset v3 (visão geral, alvo, variância/constantes, correlações, multicolinearidade, GMD por suplemento). Kernel conda `tcc`.
 - **A construir:** notebooks de comparação (Regressão Linear → RF → Gradient Boosting/XGBoost → MLP/DNN), gravando em `results/model_comparison.csv`.
 
@@ -62,9 +62,9 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 ### Abordagem definida
 - Modelos (do mais simples ao mais complexo): (1) Regressão Linear, (2) Random Forest, (3) Gradient Boosting/XGBoost, (4) MLP/DNN. TabPFN/transformer **fora por ora** (só compensaria com N ordens de grandeza maior).
 - Pré-processamento **compartilhado** em `data_prep.py` → comparação justa; resultados em `results/model_comparison.csv`.
-- **Atenção:** `data_prep.py` aponta para `data/cattle_dataset.csv` (247, **amostras reais**) — a base oficial. Os experimentos exploratórios abaixo foram no `cattle_dataset_2.csv` (494, **com sintéticas**), então **os números NÃO refletem o dado real** e devem ser refeitos no dataset de 247.
+- **Atenção:** as "Descobertas dos experimentos" abaixo são do **schema antigo + dados sintéticos** (`cattle_dataset_2.csv`, já removido) — **obsoletas**, referência histórica só. `data_prep.py` já é v3; os números reais virão dos novos notebooks sobre o dataset por-animal.
 
-### Descobertas dos experimentos (CV 10-fold, no `cattle_dataset_2.csv`, 494 — inclui sintéticas)
+### Descobertas dos experimentos (CV 10-fold, no `cattle_dataset_2.csv`, 494 — inclui sintéticas — OBSOLETO)
 - Sinal existe e é **não-linear**: praticamente sem ruído irredutível (alvo ~determinístico dado X).
 - Regressão Linear R²≈0.03 · **DNN otimizada R²≈0.16 (MAE 0.088)** · **Random Forest R²≈0.38 (MAE 0.082)**.
 - Melhorias da DNN que ajudaram: **BatchNorm + (128,64,32)** (maior ganho), **Huber loss**, **Yeo-Johnson** no alvo, menos regularização, LR scheduler. **Não** ajudaram: redes maiores (256…), interações/polinômios; razões "domain" só marginalmente (dentro do ruído).
@@ -73,10 +73,10 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 ### Decisão
 Manter a DNN como objeto de estudo do TCC e enquadrar as árvores como baseline comparativo — a comparação, com a curva de aprendizado justificando o porquê, é a contribuição. Manter **uma única base de features (as cruas)** para a comparação ser justa. Confirmar o enquadramento do tema com o Prof. Ciniro.
 
-### Próximo passo (quando a coleta chegar)
-1. Reescrever `support_scripts/data_prep.py` para o schema por-animal: alvo `gmd_kg_dia`, remover ids + `peso_saida_kg`, e resolver o desenho do split dado só **2 propriedades** (CV normal p/ tuning + leave-one-property-out p/ robustez).
-2. Refazer a EDA no novo dataset (variância das binárias, correlação PB×digestibilidade).
-3. Construir os notebooks de comparação **por partes**: Regressão Linear → RF → Gradient Boosting/XGBoost → MLP/DNN (via `data_prep` + `save_result`), e SHAP ao final.
+### Próximo passo
+- ✅ **Feito:** EDA (`eda_gmd.ipynb`) e reescrita do `data_prep.py` p/ v3 (verificado: 8 preditores, `get_cv` KFold(10) + `leave_one_property_out`, `augment_train` jitter).
+- **Smoke test (RegLinear):** CV 10-fold já dá **R²~0.37** (sinal linear real, vs ~0.03 no antigo sintético); **LOPO catastrófico p/ o linear** (R² muito negativo) — as 2 fazendas são bem diferentes (Sonico: nascidos leves 80–107 kg, ciclos longos até 1253 d, sal mineral); esperar RF melhor no LOPO (não extrapola).
+- **Agora:** construir os notebooks de comparação **por partes** — Regressão Linear → RF → Gradient Boosting/XGBoost → MLP/DNN (via `data_prep` + `save_result`, avaliar com/sem jitter), e **SHAP** ao final. Tratar a multicolinearidade `media_suplemento`×`pb_suplemento` (0,93) na leitura do SHAP.
 
 ---
 

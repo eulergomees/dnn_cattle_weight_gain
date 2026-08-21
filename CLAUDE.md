@@ -16,7 +16,8 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 - `support_scripts/ingest_sheet.py` — **ingestão de folha de campo manuscrita → v3**: recebe as linhas transcritas + constantes da fazenda, valida consistência (ganho=saída−entrada, gmd=ganho/dias), deriva clima (NASA POWER) e anexa. `import ingest_sheet as ing; ing.ingest(animais, fazenda, dry_run=True)`.
 - `support_scripts/data_prep.py` — módulo de pré-processamento compartilhado (**schema v3**): `get_data` (8 preditores, alvo `gmd_kg_dia`; dropa ids + `peso_saida_kg` + 4 constantes + `precipitacao_acumulada_mm`), `get_cv` (KFold 10 p/ tuning), `leave_one_property_out` (Elvis↔Sonico p/ robustez), `augment_train` (jitter = ruído de medição, só treino), métricas e `save_result`. Scaling fica nos notebooks (fit só no treino). Uso: `sys.path.append("support_scripts"); import data_prep as dp; d = dp.get_data()`.
 - `eda_gmd.ipynb` — **EDA** do dataset v3 (visão geral, alvo, variância/constantes, correlações, multicolinearidade, GMD por suplemento). Kernel conda `tcc`.
-- **A construir:** notebooks de comparação (Regressão Linear → RF → Gradient Boosting/XGBoost → MLP/DNN), gravando em `results/model_comparison.csv`.
+- `dnn_gmd.ipynb` — **rede neural `GMDNN`** (MLP PyTorch): grid search (CV 10-fold), melhor config com/sem jitter, leave-one-property-out, predito×real OOF, grava em `results/model_comparison.csv`.
+- **A construir:** notebooks de comparação Regressão Linear → RF → Gradient Boosting/XGBoost (mesmo esquema, via `data_prep`), e SHAP.
 
 ## Dados
 
@@ -76,7 +77,8 @@ Manter a DNN como objeto de estudo do TCC e enquadrar as árvores como baseline 
 ### Próximo passo
 - ✅ **Feito:** EDA (`eda_gmd.ipynb`) e reescrita do `data_prep.py` p/ v3 (verificado: 8 preditores, `get_cv` KFold(10) + `leave_one_property_out`, `augment_train` jitter).
 - **Smoke test (RegLinear):** CV 10-fold já dá **R²~0.37** (sinal linear real, vs ~0.03 no antigo sintético); **LOPO catastrófico p/ o linear** (R² muito negativo) — as 2 fazendas são bem diferentes (Sonico: nascidos leves 80–107 kg, ciclos longos até 1253 d, sal mineral); esperar RF melhor no LOPO (não extrapola).
-- **Agora:** construir os notebooks de comparação **por partes** — Regressão Linear → RF → Gradient Boosting/XGBoost → MLP/DNN (via `data_prep` + `save_result`, avaliar com/sem jitter), e **SHAP** ao final. Tratar a multicolinearidade `media_suplemento`×`pb_suplemento` (0,93) na leitura do SHAP.
+- ✅ **DNN feita** (`dnn_gmd.ipynb`): grid search expandido (48 configs) → melhor **(64,32), dropout 0, lr 1e-2, BN=False, wd 1e-4**. **CV 10-fold: R² 0,665 sem jitter → 0,69 com jitter** (MAE 0,031; baseline 0,066). Jitter reduz variância (dp 0,20→0,14). Configs do topo empatam em ~0,65–0,69 → **perto do teto de um MLP único com N=155** (expandir grid deu só ~+0,01). LOPO catastrófico (Elvis→Sonico R²≈−76). *(No dado real a DNN vai muito melhor que os R²≈0,16 do antigo sintético.)*
+- **Agora:** construir os baselines de comparação — Regressão Linear → RF → Gradient Boosting/XGBoost (mesmo esquema `data_prep` + `save_result`, com/sem jitter) e **SHAP**. Ver como a RF se sai no LOPO (não extrapola). Tratar multicolinearidade `media_suplemento`×`pb_suplemento` (0,93) na leitura do SHAP.
 
 ---
 

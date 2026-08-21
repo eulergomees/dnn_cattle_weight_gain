@@ -27,8 +27,8 @@ SEED = 42
 N_SPLITS = 10
 RESULTS_PATH = "results/model_comparison.csv"
 
-# escalas do jitter (ruído de medição) — só aplicado no treino, pós-split
-NOISE = {"peso_entrada_kg": 2.5, "peso_saida_kg": 2.5, "temperatura_media_c": 0.5}
+# escalas do jitter (ruído de medição nas FEATURES) — só aplicado no treino, pós-split
+NOISE = {"peso_entrada_kg": 2.5, "temperatura_media_c": 0.5}
 
 
 def load_raw(path=DATA_PATH):
@@ -72,24 +72,25 @@ def leave_one_property_out(groups):
 
 
 def augment_train(df_train, k=2, seed=SEED):
-    """Jitter (ruído de medição) — expande SÓ o treino com `k` cópias por linha.
+    """Jitter (ruído de medição) **feature-only** — expande SÓ o treino com `k` cópias.
 
-    Perturba pesos e temperatura e REDERIVA `gmd_kg_dia` (e `media_suplemento_kg_dia`
-    dos proteinados) a partir dos pesos perturbados. NUNCA chamar em val/test.
-    Recebe um recorte do df COMPLETO (precisa de peso_saida_kg e dias_permanencia).
+    Perturba as FEATURES contínuas (`peso_entrada_kg`, `temperatura_media_c`) com ruído
+    de medição, **mantendo o alvo `gmd_kg_dia` REAL**. NUNCA chamar em val/test.
+
+    Por que feature-only: rederivar o alvo a partir do `peso_entrada` — que também é
+    feature e entra em `gmd=(peso_saida−peso_entrada)/dias` — acopla feature↔alvo; um
+    diagnóstico mostrou que isso ensina a rede a derivada exata ∂gmd/∂peso_entrada e
+    **infla o R² artificialmente** (0,67→0,81 com ruído crescente), sem sinal preditivo
+    novo. A versão feature-only é a honesta.
     """
     rng = np.random.default_rng(seed)
     copies = [df_train]
     for _ in range(k):
         a = df_train.copy()
-        pe = (a["peso_entrada_kg"] + rng.normal(0, NOISE["peso_entrada_kg"], len(a))).clip(lower=1)
-        ps = (a["peso_saida_kg"] + rng.normal(0, NOISE["peso_saida_kg"], len(a))).clip(lower=1)
-        a["peso_entrada_kg"] = pe
-        a["peso_saida_kg"] = ps
-        a["gmd_kg_dia"] = (ps - pe) / a["dias_permanencia"]
-        prot = a["pb_suplemento_pct"] > 0                     # proteinado: 0,3% do peso médio
-        a.loc[prot, "media_suplemento_kg_dia"] = (0.003 * (pe[prot] + ps[prot]) / 2).round(3)
-        a["temperatura_media_c"] = a["temperatura_media_c"] + rng.normal(0, NOISE["temperatura_media_c"], len(a))
+        a["peso_entrada_kg"] = (a["peso_entrada_kg"]
+                                + rng.normal(0, NOISE["peso_entrada_kg"], len(a))).clip(lower=1)
+        a["temperatura_media_c"] = (a["temperatura_media_c"]
+                                    + rng.normal(0, NOISE["temperatura_media_c"], len(a)))
         copies.append(a)
     return pd.concat(copies, ignore_index=True)
 

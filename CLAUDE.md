@@ -2,7 +2,7 @@
 
 ## Visão geral
 
-Rede neural densa (DNN/MLP em **PyTorch**) que prevê o **Ganho Médio Diário (GMD, `adg_kg_day`)** de bovinos de corte. Projeto acadêmico de TCC — IFMG, Depto. de Engenharia e Computação (Prof. Ciniro Nametala; aluno Euler Gomes). Modelo `GMDNN`, ainda em desenvolvimento.
+Rede neural densa (DNN/MLP em **PyTorch**) que prevê o **Ganho Médio Diário (GMD, `gmd_kg_dia`)** de bovinos de corte. Projeto acadêmico de TCC — IFMG, Depto. de Engenharia e Computação (Prof. Ciniro Nametala; aluno Euler Gomes). Modelo `GMDNN`, ainda em desenvolvimento.
 
 A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo comparativo**: a rede é avaliada contra baselines (regressão linear) e ensembles de árvores (Random Forest, Gradient Boosting), sobre os mesmos dados/split/CV. A comparação — com curva de aprendizado justificando quando cada família vence — é parte da contribuição. Ver "Onde paramos".
 
@@ -21,12 +21,12 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 
 ## Dados
 
-- Coletados em **2 fazendas** da região de **Bambuí-MG**: **Elvis** (94 animais; −20,0072/−46,0748) e **Sonico** (61; −19,9949/−45,9234).
+- Coletados em **3 fazendas** da região de **Bambuí-MG**: **Elvis** (113; −20,0072/−46,0748), **Sonico** (61; −19,9949/−45,9234) e **Humberto** (71; −20,0097/−45,9581, via Excel de pesagens).
 - Schema e regras em "Nova versão do dataset (por animal)".
 
 ## Nova versão do dataset (por animal — EM COLETA)
 
-> `data/dataset_por_animal_modelo_v3.csv` (**19 colunas**) já tem a **1ª propriedade preenchida** (13 animais da fazenda Elvis); falta a 2ª fazenda. **Substitui o schema antigo** e torna obsoletos todos os números medidos antes (schema antigo + dados com sintéticas).
+> `data/dataset_por_animal_modelo_v3.csv` (**19 colunas**) tem **245 animais em 3 fazendas** (Elvis 113, Humberto 71, Sonico 61). **Substitui o schema antigo** e torna obsoletos todos os números medidos antes (schema antigo + dados com sintéticas). Detalhes de coleta/constantes em "Onde paramos".
 
 **Mudança central:** cada linha = **um animal** (pesagem de entrada → saída), não mais uma pesagem individual. Corrige pseudo-replicação e o vazamento de ter o mesmo animal em treino e teste.
 
@@ -43,7 +43,7 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 3. Augmentation (se houver) **só APÓS o split**, no treino. Técnica definida: **jitter = ruído de medição** nos contínuos (pesos ±2–3 kg, clima) rederivando `gmd_kg_dia`; implementar junto com a reescrita do `data_prep.py` v3 (avaliar sempre em dado real, com/sem augmentation).
 4. `StandardScaler` ajustado só no treino.
 
-**⚠️ Restrição prática (2 propriedades):** o dataset terá só **2 fazendas**. Isso inviabiliza o split agrupado por propriedade como CV de vários folds (GroupKFold ≤ nº de grupos = 2). Desenho provável: **CV normal (não-agrupado) para seleção/tuning** + **leave-one-property-out** (treina fazenda A / testa B e vice-versa) só como **teste de robustez / validade externa**. Decidir com o Prof. Ciniro.
+**⚠️ Split com poucas propriedades:** o dataset tem **3 fazendas** (Elvis/Humberto/Sonico). Desenho adotado no `data_prep`: **CV 10-fold não-agrupado para seleção/tuning** + **leave-one-property-out** (treina 2 fazendas / testa a 3ª, rodando as 3) como **teste de robustez / validade externa**. Confirmar enquadramento com o Prof. Ciniro.
 
 **Pendências do novo schema:** verificar variância de `sexo_macho`, `rotacao_piquete`, `frequencia_suplementacao_dias_semana` (constantes antes → se constantes, remover e reportar como condições controladas); baselines faltando (RF, XGBoost, linear); implementar importância por SHAP. *(Resolvida: `media_digestibilidade_forragem_pct` removida do schema pela correlação ~0.97 com PB.)*
 
@@ -58,7 +58,7 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 
 **Última atualização:** 2026-08-20
 
-**Tópico atual:** **Coleta concluída — 2 propriedades.** `dataset_por_animal_modelo_v3.csv` tem **155 animais**: **Elvis 94** (forragem Decumbens/MG4/Tanzânia/Marandu, PB 10,42; coords −20,0072/−46,0748) e **Sonico 61** (forragem Decumbens+Ruziziensis, PB 9,5 pesquisado; coords −19,9949/−45,9234). Todas fêmeas aneloradas; suplemento por lote (proteinado 30/25% a 0,3% do peso; **sal mineral** PB 0/fixo 0,10 kg/dia); transporte 1/2 conforme origem; clima do NASA POWER por janela (coords da respectiva fazenda). Ingestão via `ingest_sheet.py`, transcrição **por partes** com checagem de consistência (ganho=saída−entrada, gmd=ganho/dias). Correções aplicadas: livro mestre reconciliado (conflitos 245/356/360/365/366/343 sobrescritos), brinco 426 corrigido, **61 animais reatribuídos Elvis→Sonico** (PB e clima recalculados). Fora: 335/350/172(morreu)/187/177 sem saída. ids especiais: `001`=S/BRINCO, `002`=2º animal com brinco 336, `044` com zero à esquerda. **EDA preliminar** em `eda_gmd.ipynb` (precisa reexecutar/atualizar p/ 2 propriedades). **Modelagem destravada.**
+**Tópico atual:** **Coleta em 3 propriedades.** `dataset_por_animal_modelo_v3.csv` tem **245 animais**: **Elvis 113** (forragem Decumbens/MG4/Tanzânia/Marandu, PB 10,42; suplemento proteinado 30/25/20% ou sal mineral), **Sonico 61** (Decumbens+Ruziziensis, PB 9,5) e **Humberto 71** (mix Brachiaria/Cynodon, PB 10,0; via Excel `Pesagem Gado`, aba "Analise 1 pes ate ultima" = 1ª→última pesagem; `proporcao_bos_indicus_pct` **varia** por raça da coluna descrição — Nelore/Guzerá 100, Angus 50, resto 75; brinco 150 colidiu → id `150H`). Coords próprias por fazenda. Todas fêmeas; suplemento por lote (proteinado 30/25% a 0,3% do peso; **sal mineral** PB 0/fixo 0,10 kg/dia); transporte 1/2 conforme origem; clima do NASA POWER por janela (coords da respectiva fazenda). Ingestão via `ingest_sheet.py`, transcrição **por partes** com checagem de consistência (ganho=saída−entrada, gmd=ganho/dias). Correções aplicadas: livro mestre reconciliado (conflitos 245/356/360/365/366/343 sobrescritos), brinco 426 corrigido, **61 animais reatribuídos Elvis→Sonico** (PB e clima recalculados). Fora: 335/350/172(morreu)/187/177 sem saída. ids especiais: `001`=S/BRINCO, `002`=2º animal com brinco 336, `044` com zero à esquerda. **⚠️ EDA (`eda_gmd.ipynb`) e DNN (`dnn_gmd.ipynb`, R²~0,665) foram feitos no dataset de 155 (2 propriedades) — precisam REEXECUTAR no de 226 / 3 propriedades** (mais dados = provável ganho na rede; `data_prep` já lida com 3 grupos, sem mudança).
 
 ### Abordagem definida
 - Modelos (do mais simples ao mais complexo): (1) Regressão Linear, (2) Random Forest, (3) Gradient Boosting/XGBoost, (4) MLP/DNN. TabPFN/transformer **fora por ora** (só compensaria com N ordens de grandeza maior).

@@ -10,24 +10,18 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 
 ## Estrutura
 
-- `cattle_gmd_dnn.ipynb` — notebook **principal da DNN** (EDA + prep + CV 10-fold + modelo final + avaliação). Rodar todas as células (kernel conda `tcc`).
-- `dnn_cattle_weight_gain.ipynb` — notebook antigo (schema em português, `cattle_gain.csv`); legado.
-- **Notebooks de comparação** (um por modelo, em construção): Regressão Linear, Random Forest, Gradient Boosting/XGBoost, MLP/DNN. Todos importam o pré-processamento compartilhado e gravam em `results/model_comparison.csv`.
-- `data/` — datasets:
-  - `cattle_dataset.csv` (247 amostras) — **dataset principal, amostras REAIS** (coleta de campo), já processado, 20 colunas (19 features + alvo `adg_kg_day`). É a base oficial para treino/avaliação e para o estudo comparativo.
-  - `cattle_dataset_2.csv` (494 amostras) — **contém amostras SINTÉTICAS** somadas às reais. Usar só para experimentos exploratórios; resultados não refletem desempenho no dado real.
-  - `cattle_gain.csv` (203 linhas) — dados brutos em português (schema antigo).
-- `models/` — pesos treinados: `model_adg_dnn.pth` (DNN atual, salva com stats do scaler e λ do Yeo-Johnson), `model_cattle_gain.pth`.
-- `support_scripts/data_prep.py` — **módulo de pré-processamento compartilhado** dos notebooks de comparação: split hold-out fixo, KFold(10), seleção de features (dropa constantes + leakage + alvo), métricas MAE/RMSE/R², baseline e `save_result`. Constantes no topo (`DATA_PATH`, `SEED`, `N_SPLITS`, `TEST_SIZE`). Uso: `sys.path.append("support_scripts"); import data_prep as dp; d = dp.get_data()`.
+> Repositório enxuto: o schema antigo (notebooks, datasets `cattle_*`, modelos `.pth`, `processar_formulario.py`) foi **removido** — recuperável pelo histórico do git se necessário.
+
+- `data/dataset_por_animal_modelo_v3.csv` — **o dataset** (schema por-animal, alvo `gmd_kg_dia`). Detalhes em "Nova versão do dataset (por animal)".
 - `support_scripts/ingest_sheet.py` — **ingestão de folha de campo manuscrita → v3**: recebe as linhas transcritas + constantes da fazenda, valida consistência (ganho=saída−entrada, gmd=ganho/dias), deriva clima (NASA POWER) e anexa. `import ingest_sheet as ing; ing.ingest(animais, fazenda, dry_run=True)`.
-- `support_scripts/processar_formulario.py` — converte export do Google Forms → dataset pronto (idade, raça→% Bos indicus, forrageira→PB/digestibilidade, clima via NASA POWER API p/ Bambuí-MG, GMD). Uso: `python support_scripts/processar_formulario.py dados.csv [--sem-clima]`.
-- `results/model_comparison.csv` — tabela agregada dos modelos (gerada pelos notebooks via `data_prep.save_result`).
-- `slides_tcc/` — apresentação LaTeX/Beamer do TCC. `monitoring.ods` — planilha de acompanhamento.
+- `support_scripts/data_prep.py` — módulo de pré-processamento compartilhado dos notebooks de comparação (split, KFold(10), seleção de features, métricas MAE/RMSE/R², `save_result`). **⚠️ Ainda no schema antigo — reescrever para o v3** (alvo `gmd_kg_dia`, split das 2 propriedades). Uso: `sys.path.append("support_scripts"); import data_prep as dp`.
+- `eda_gmd.ipynb` — **EDA** do dataset v3 (visão geral, alvo, variância/constantes, correlações, multicolinearidade, GMD por suplemento). Kernel conda `tcc`.
+- **A construir:** notebooks de comparação (Regressão Linear → RF → Gradient Boosting/XGBoost → MLP/DNN), gravando em `results/model_comparison.csv`.
 
 ## Dados
 
-- Coletados em duas fazendas na região de **Bambuí-MG**.
-- Features de `cattle_dataset.csv` (ordem das colunas): `initial_weight_kg, age_days, sex_male, bos_indicus_proportion_pct, supplement_amount_kg_day, supplement_crude_protein_pct, supplement_metabolizable_energy, supplementation_frequency_days_week, forage_crude_protein_pct, forage_digestibility_pct, days_on_pasture, paddock_rotation, transport_stress, mean_temperature_c, accumulated_rainfall_mm, days_since_health_event, health_event_duration_days, recent_vaccination, recent_deworming` → alvo `adg_kg_day`.
+- Coletados em **2 fazendas** da região de **Bambuí-MG**: **Elvis** (94 animais; −20,0072/−46,0748) e **Sonico** (61; −19,9949/−45,9234).
+- Schema e regras em "Nova versão do dataset (por animal)".
 
 ## Nova versão do dataset (por animal — EM COLETA)
 
@@ -61,9 +55,9 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 
 ## Onde paramos
 
-**Última atualização:** 2026-07-18
+**Última atualização:** 2026-08-20
 
-**Tópico atual:** **Coleta em andamento** no schema *por animal* (ver "Nova versão do dataset (por animal)"). **1ª propriedade (Elvis) — folhas processadas:** `dataset_por_animal_modelo_v3.csv` tem **126 animais da Elvis** (ingestão via `support_scripts/ingest_sheet.py`; livro mestre reconciliado em 3 lotes — conflitos 245/356/360/365/366 + 343 sobrescritos pelo mestre; constantes variam por origem: comprados `transporte`=2/`pb`=25, POSSES nascidos na propriedade `transporte`=1/`pb`=25, 70 primeiros `transporte`=1/`pb`=30; brinco 426 corrigido (saída 312→321); 335/350 sem saída (fora); 329/372 mantidos) (fêmeas aneloradas; suplemento 0,3% do peso médio; PB forragem 10,42; clima do NASA POWER por janela; ids baixos `001`=S/BRINCO, `002`=2º animal com brinco 336 repetido; `044` preservado com zero à esquerda). Transcrição **por partes** com checagem de consistência (ganho=saída−entrada, gmd=ganho/dias) e dias validados pelas datas. Convenção: `data_entrada = venda − dias` quando a compra manuscrita conflita com o `dias` (venda e dias são mais confiáveis). Falta a **2ª fazenda** — só então o split agrupado e a modelagem fazem sentido. Modelagem pausada até isso. Plano de fundo: **estudo comparativo** (DNN central + baselines) sobre o novo schema.
+**Tópico atual:** **Coleta concluída — 2 propriedades.** `dataset_por_animal_modelo_v3.csv` tem **155 animais**: **Elvis 94** (forragem Decumbens/MG4/Tanzânia/Marandu, PB 10,42; coords −20,0072/−46,0748) e **Sonico 61** (forragem Decumbens+Ruziziensis, PB 9,5 pesquisado; coords −19,9949/−45,9234). Todas fêmeas aneloradas; suplemento por lote (proteinado 30/25% a 0,3% do peso; **sal mineral** PB 0/fixo 0,10 kg/dia); transporte 1/2 conforme origem; clima do NASA POWER por janela (coords da respectiva fazenda). Ingestão via `ingest_sheet.py`, transcrição **por partes** com checagem de consistência (ganho=saída−entrada, gmd=ganho/dias). Correções aplicadas: livro mestre reconciliado (conflitos 245/356/360/365/366/343 sobrescritos), brinco 426 corrigido, **61 animais reatribuídos Elvis→Sonico** (PB e clima recalculados). Fora: 335/350/172(morreu)/187/177 sem saída. ids especiais: `001`=S/BRINCO, `002`=2º animal com brinco 336, `044` com zero à esquerda. **EDA preliminar** em `eda_gmd.ipynb` (precisa reexecutar/atualizar p/ 2 propriedades). **Modelagem destravada.**
 
 ### Abordagem definida
 - Modelos (do mais simples ao mais complexo): (1) Regressão Linear, (2) Random Forest, (3) Gradient Boosting/XGBoost, (4) MLP/DNN. TabPFN/transformer **fora por ora** (só compensaria com N ordens de grandeza maior).

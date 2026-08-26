@@ -17,7 +17,9 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 - `support_scripts/data_prep.py` — módulo de pré-processamento compartilhado (**schema v3**): `get_data` (8 preditores, alvo `gmd_kg_dia`; dropa ids + `peso_saida_kg` + 4 constantes + `precipitacao_acumulada_mm`), `get_cv` (KFold 10 p/ tuning), `leave_one_property_out` (Elvis↔Sonico p/ robustez), `augment_train` (jitter = ruído de medição, só treino), métricas e `save_result`. Scaling fica nos notebooks (fit só no treino). Uso: `sys.path.append("support_scripts"); import data_prep as dp; d = dp.get_data()`.
 - `eda_gmd.ipynb` — **EDA** do dataset v3 (visão geral, alvo, variância/constantes, correlações, multicolinearidade, GMD por suplemento). Kernel conda `tcc`.
 - `dnn_gmd.ipynb` — **rede neural `GMDNN`** (MLP PyTorch): grid search (CV 10-fold), melhor config com/sem jitter, leave-one-property-out, predito×real OOF, grava em `results/model_comparison.csv`.
-- **A construir:** notebooks de comparação Regressão Linear → RF → Gradient Boosting/XGBoost (mesmo esquema, via `data_prep`), e SHAP.
+- `baselines/` — notebooks de comparação (`01_linear`, `02_random_forest`, `03_gradient_boosting`, `04_comparacao`), via `support_scripts/sk_eval.py` (CV 10-fold + LOPO + jitter no mesmo esquema do `data_prep`); cada um grava em `results/model_comparison.csv`.
+- `support_scripts/sk_eval.py` — helpers de avaliação sklearn (cv_eval, oof, lopo, registrar) compartilhados pelos baselines.
+- **A construir:** SHAP (interpretação do melhor modelo).
 
 ## Dados
 
@@ -79,7 +81,8 @@ Manter a DNN como objeto de estudo do TCC e enquadrar as árvores como baseline 
 - **Smoke test (RegLinear):** CV 10-fold já dá **R²~0.37** (sinal linear real, vs ~0.03 no antigo sintético); **LOPO catastrófico p/ o linear** (R² muito negativo) — as 2 fazendas são bem diferentes (Sonico: nascidos leves 80–107 kg, ciclos longos até 1253 d, sal mineral); esperar RF melhor no LOPO (não extrapola).
 - ✅ **DNN** (`dnn_gmd.ipynb`) reexecutada nos **245 animais / 3 fazendas** (9 preditores — `proporcao_bos_indicus_pct` virou variável com as raças da Humberto): grid search → melhor **(128,64,32), dropout 0, lr 1e-2, BN=True, wd 0**. **CV 10-fold: R² 0,805 (single) → 0,838 com ensemble de 5 seeds (modelo final), MAE 0,027**; baseline MAE 0,079. Subiu de 0,665 (155) — mais dados levantou o teto; parte do ganho de R² é o alvo ter mais variância (MAE é o comparável). Jitter feature-only não ajuda; ensemble de seeds ajuda de forma honesta. **LOPO melhorou:** testa Humberto R²+0,12, Elvis −0,12, mas **Sonico −154** (outlier: nascidos leves/ciclos longos/sal mineral).
 - ⚠️ **Jitter — lição importante:** a augmentation que **rederiva o alvo** a partir do `peso_entrada` (feature que entra em `gmd=(peso_saida−peso_entrada)/dias`) **acopla feature↔alvo e infla o R² artificialmente** (diagnóstico: subia 0,67→0,81 só aumentando o ruído). Trocado por **jitter feature-only** (perturba features, mantém GMD real) em `data_prep.augment_train` — e assim o jitter **não ajuda** (0,665→0,61). Ou seja: o número honesto da DNN é **~0,665 sem jitter**.
-- **Agora:** construir os baselines de comparação — Regressão Linear → RF → Gradient Boosting/XGBoost (mesmo esquema `data_prep` + `save_result`, com/sem jitter) e **SHAP**. Ver como a RF se sai no LOPO (não extrapola). Tratar multicolinearidade `media_suplemento`×`pb_suplemento` (0,93) na leitura do SHAP.
+- ✅ **Baselines feitos** (`baselines/`): CV 10-fold — **DNN 0,838 ≫ GB 0,50 > RF 0,48 > Linear 0,42**. Mas o **LOPO inverte**: RF ~0 (mais robusta), GB −0,96, Linear −66, **DNN −51** (extrapola e quebra). Trade-off: a rede vence *dentro* da distribuição; as árvores generalizam muito melhor p/ **fazenda nova**. ⚠️ **Suspeita:** o CV não-agrupado favorece a DNN (`temperatura`/`proporcao_ciclo_seca` ≈ "ID do lote" → co-ocorrência de lote em treino/val vaza); o **LOPO é a métrica honesta**.
+- **Agora:** investigar **CV agrupado por lote/propriedade** (confirmar se o 0,84 da DNN cai — testa a suspeita de vazamento), rodar **SHAP** no melhor modelo, e tratar a multicolinearidade `media_suplemento`×`pb_suplemento` (0,93) na leitura do SHAP.
 
 ---
 

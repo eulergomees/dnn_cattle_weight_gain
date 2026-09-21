@@ -7,14 +7,14 @@ comparação justa. Import a partir da raiz do repositório:
     import data_prep as dp
     d = dp.get_data()                 # X, y, groups, feature_cols, scale_cols, df
 
-Alvo: `gmd_kg_dia`. Split: 10-fold CV (não-agrupado) para comparar/tunar +
-leave-one-property-out (Elvis↔Sonico) para robustez/validade externa.
+Alvo: `gmd_kg_dia`. Split: 5 folds DISJUNTOS com **N_TEST=49 animais de teste** cada
+(estratificado por fazenda, proporcional ao tamanho de cada uma) para comparar/tunar +
+leave-one-property-out (3 fazendas) para robustez/validade externa.
 Scaling NÃO é feito aqui (cada notebook aplica StandardScaler fit só no treino).
 """
 import os
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import KFold
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 DATA_PATH = "data/dataset_por_animal_modelo_v3.csv"
@@ -24,7 +24,8 @@ GROUP = "id_propriedade"
 DROP = ["id_animal", "id_propriedade", "data_entrada", "data_saida",
         "peso_saida_kg", "precipitacao_acumulada_mm"]
 SEED = 42
-N_SPLITS = 10
+N_TEST = 49          # amostras de teste por fold (fixo), distribuídas pela % de cada fazenda
+N_SPLITS = 5         # folds disjuntos de 49 = 245 -> todo animal é testado exatamente 1x
 RESULTS_PATH = "results/model_comparison.csv"
 
 # escalas do jitter (ruído de medição nas FEATURES) — só aplicado no treino, pós-split
@@ -55,9 +56,41 @@ def get_data():
                 feature_cols=feature_cols, scale_cols=scale_cols)
 
 
+class FarmStratifiedSplit:
+    """Folds DISJUNTOS com EXATAMENTE `n_test` animais de teste, estratificados por fazenda.
+
+    Cada fazenda é embaralhada (seed fixa) e distribuída em rodízio pelos folds, com o
+    rodízio continuando de uma fazenda para a próxima. Resultado: cada fazenda entra em
+    cada fold com a sua % (±1 animal) e os folds ficam com tamanhos idênticos. Ex.:
+    245 animais (113/71/61), 5 folds -> 49 por fold (23/14/12, 22/15/12, 22/14/13...).
+    Partição: cada animal é testado 1x (`oof[va] = preds` vale). Exige
+    `n_splits * n_test == n_animais`; se o dataset crescer, ajuste `N_TEST`.
+    Uso igual ao do KFold: `for tr, va in dp.get_cv().split(df)` (df com `id_propriedade`).
+    """
+    def __init__(self, n_splits=N_SPLITS, n_test=N_TEST, seed=SEED):
+        self.n_splits, self.n_test, self.seed = n_splits, n_test, seed
+
+    def get_n_splits(self, X=None, y=None, groups=None):
+        return self.n_splits
+
+    def split(self, X, y=None, groups=None):
+        farm = np.asarray(X[GROUP] if hasattr(X, "columns") else groups)
+        if len(farm) != self.n_splits * self.n_test:
+            raise ValueError(f"{len(farm)} animais != {self.n_splits} folds x {self.n_test} de teste; "
+                             f"ajuste N_TEST/N_SPLITS em data_prep.")
+        rng = np.random.default_rng(self.seed)
+        order = np.concatenate([rng.permutation(np.flatnonzero(farm == n))
+                                for n in np.unique(farm)])
+        fold = np.empty(len(farm), dtype=int)
+        fold[order] = np.arange(len(farm)) % self.n_splits       # rodízio contínuo
+        for k in range(self.n_splits):
+            te = np.flatnonzero(fold == k)
+            yield np.flatnonzero(fold != k), te
+
+
 def get_cv():
-    """10-fold CV (não-agrupado) — métrica principal de comparação/tuning."""
-    return KFold(n_splits=N_SPLITS, shuffle=True, random_state=SEED)
+    """Folds de comparação/tuning: 5 folds disjuntos de N_TEST=49 animais, por fazenda."""
+    return FarmStratifiedSplit()
 
 
 def leave_one_property_out(groups):
@@ -118,7 +151,7 @@ def summarize(fold_metrics):
 def save_result(name, cv_df, ext_metrics=None, path=RESULTS_PATH):
     """Grava/atualiza os scores do modelo na tabela comparativa compartilhada.
 
-    cv_df: métricas por fold do 10-fold CV. ext_metrics (opcional): dict com a
+    cv_df: métricas por fold de `get_cv()`. ext_metrics (opcional): dict com a
     média do leave-one-property-out, p.ex. {"MAE":..., "R2":...}.
     """
     os.makedirs(os.path.dirname(path), exist_ok=True)

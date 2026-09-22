@@ -4,7 +4,7 @@
 
 Rede neural densa (DNN/MLP em **PyTorch**) que prevê o **Ganho Médio Diário (GMD, `gmd_kg_dia`)** de bovinos de corte. Projeto acadêmico de TCC — IFMG, Depto. de Engenharia e Computação (Prof. Ciniro Nametala; aluno Euler Gomes). Modelo `GMDNN`, ainda em desenvolvimento.
 
-A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo comparativo**: a rede é avaliada contra baselines (regressão linear) e ensembles de árvores (Random Forest, Gradient Boosting), sobre os mesmos dados/split/CV. A comparação — com curva de aprendizado justificando quando cada família vence — é parte da contribuição. Ver "Onde paramos".
+A DNN é o **modelo central do TCC** — arquitetura/hiperparâmetros **congelados** (decidido em reunião c/ orientador). O trabalho é um **estudo comparativo**: a rede contra baselines (regressão linear, XGBoost/RF e **TabPFN**), sobre os mesmos dados/split/CV. A comparação — com curva de aprendizado justificando quando cada família vence — é a contribuição. Ver "Onde paramos".
 
 > **Escopo desta fase: apenas código e dados.** A redação do TCC (LaTeX, classe abntex2) fica para o fim do projeto, com o modelo pronto. **Não** produzir, editar ou sugerir texto do trabalho.
 
@@ -22,12 +22,12 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 
 ## Dados
 
-- Coletados em **3 fazendas** da região de **Bambuí-MG**: **Elvis** (113; −20,0072/−46,0748), **Sonico** (61; −19,9949/−45,9234) e **Humberto** (71; −20,0097/−45,9581, via Excel de pesagens).
+- Coletados originalmente em **3 fazendas** da região de **Bambuí-MG**: Elvis (113), Sonico (61) e Humberto (71; via Excel de pesagens). **Sonico foi fundido em Elvis** (decisão de reunião, 2026-09-22) — ver "Fusão Sonico→Elvis". Dataset final: **2 fazendas, Elvis 174 / Humberto 71**.
 - Schema e regras em "Nova versão do dataset (por animal)".
 
 ## Nova versão do dataset (por animal — EM COLETA)
 
-> `data/dataset_por_animal_modelo_v3.csv` (**19 colunas**) tem **245 animais em 3 fazendas** (Elvis 113, Humberto 71, Sonico 61). **Substitui o schema antigo** e torna obsoletos todos os números medidos antes (schema antigo + dados com sintéticas). Detalhes de coleta/constantes em "Onde paramos".
+> `data/dataset_por_animal_modelo_v3.csv` (**19 colunas**) tem **245 animais em 2 fazendas** (Elvis 174, Humberto 71 — Sonico fundido em Elvis). **Substitui o schema antigo** e torna obsoletos todos os números medidos antes (schema antigo + dados com sintéticas, e os números de 3-fazendas pré-fusão). Detalhes de coleta/constantes em "Onde paramos".
 
 **Mudança central:** cada linha = **um animal** (pesagem de entrada → saída), não mais uma pesagem individual. Corrige pseudo-replicação e o vazamento de ter o mesmo animal em treino e teste.
 
@@ -44,7 +44,29 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 3. Augmentation (se houver) **só APÓS o split**, no treino. Técnica definida: **jitter = ruído de medição** nos contínuos (pesos ±2–3 kg, clima) rederivando `gmd_kg_dia`; implementar junto com a reescrita do `data_prep.py` v3 (avaliar sempre em dado real, com/sem augmentation).
 4. `StandardScaler` ajustado só no treino.
 
-**⚠️ Split com poucas propriedades:** o dataset tem **3 fazendas** (Elvis/Humberto/Sonico). Desenho adotado no `data_prep`: **5 folds disjuntos de 49 animais de teste (estratificados pela % de cada fazenda; todo animal testado 1x) para seleção/tuning** + **leave-one-property-out** (treina 2 fazendas / testa a 3ª, rodando as 3) como **teste de robustez / validade externa**. Confirmar enquadramento com o Prof. Ciniro.
+**⚠️ Split com poucas propriedades:** o dataset tem **2 fazendas** (Elvis/Humberto, pós-fusão). Desenho adotado no `data_prep`: **5 folds disjuntos de 49 animais de teste (estratificados pela % de cada fazenda; todo animal testado 1x) para seleção/tuning** + **leave-one-property-out** (agora só **2 splits**: treina Elvis/testa Humberto e vice-versa) como **teste de robustez / validade externa**. Enquadramento confirmado com o Prof. Ciniro (reunião 2026-09-22): manter comparação DNN × baselines.
+
+### Fusão Sonico→Elvis (2026-09-22)
+
+Decisão de reunião com o orientador: o Sonico (61 animais) tinha LOPO catastrófico
+(R² ≈ −266) e os animais **passaram grande parte da vida na propriedade do Elvis**
+antes de ir para o Sonico — fundir é mais fiel à origem real do que manter como
+3ª fazenda. Fusão = reclassificar `id_propriedade` sonico→elvis e trocar as colunas
+**tied à propriedade** pelos valores do Elvis, mantendo as colunas **do próprio
+animal** (peso, dias, GMD, suplemento por peso) como estavam:
+- `pb_suplemento_pct`: 25/0 → **25** (decisão do orientador; Elvis tem 3 valores
+  30/25/20 que se sobrepõem no tempo — sem resposta única, então fixou-se 25).
+- `media_proteina_bruta_forragem_pct`: 9,5 → **10,42** (constante única do Elvis).
+- `temperatura_media_c`/`precipitacao_acumulada_mm`/`proporcao_ciclo_seca`:
+  **recalculados via NASA POWER** com as coordenadas do Elvis (−20,0072/−46,0748),
+  sobre a mesma janela real (`data_entrada`→`data_saida`) de cada animal.
+- Mantidos: `peso_entrada_kg`, `peso_saida_kg`, `dias_permanencia`, `gmd_kg_dia`,
+  `media_suplemento_kg_dia`, `sexo_macho`, `proporcao_bos_indicus_pct`,
+  `numero_eventos_transporte` — são do próprio animal, não da propriedade.
+- Dataset final: **245 animais, 2 fazendas (Elvis 174, Humberto 71)**.
+  Backup pré-fusão fora do repo (`/tmp/.../dataset_backup_pre_merge.csv`, sessão local).
+- `data_prep.py` **não mudou** — `FarmStratifiedSplit`/`leave_one_property_out` já
+  eram genéricos por nº de grupos; `leave_one_property_out` passou de 3 para 2 splits.
 
 **Pendências do novo schema:** verificar variância de `sexo_macho`, `rotacao_piquete`, `frequencia_suplementacao_dias_semana` (constantes antes → se constantes, remover e reportar como condições controladas); baselines faltando (RF, XGBoost, linear); implementar importância por SHAP. *(Resolvida: `media_digestibilidade_forragem_pct` removida do schema pela correlação ~0.97 com PB.)*
 
@@ -57,12 +79,12 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 
 ## Onde paramos
 
-**Última atualização:** 2026-09-21
+**Última atualização:** 2026-09-22
 
-**Tópico atual:** **Coleta em 3 propriedades.** `dataset_por_animal_modelo_v3.csv` tem **245 animais**: **Elvis 113** (forragem Decumbens/MG4/Tanzânia/Marandu, PB 10,42; suplemento proteinado 30/25/20% ou sal mineral), **Sonico 61** (Decumbens+Ruziziensis, PB 9,5) e **Humberto 71** (mix Brachiaria/Cynodon, PB 10,0; via Excel `Pesagem Gado`, aba "Analise 1 pes ate ultima" = 1ª→última pesagem; `proporcao_bos_indicus_pct` **varia** por raça da coluna descrição — Nelore/Guzerá 100, Angus 50, resto 75; brinco 150 colidiu → id `150H`). Coords próprias por fazenda. Todas fêmeas; suplemento por lote (proteinado 30/25% a 0,3% do peso; **sal mineral** PB 0/fixo 0,10 kg/dia); transporte 1/2 conforme origem; clima do NASA POWER por janela (coords da respectiva fazenda). Ingestão via `ingest_sheet.py`, transcrição **por partes** com checagem de consistência (ganho=saída−entrada, gmd=ganho/dias). Correções aplicadas: livro mestre reconciliado (conflitos 245/356/360/365/366/343 sobrescritos), brinco 426 corrigido, **61 animais reatribuídos Elvis→Sonico** (PB e clima recalculados). Fora: 335/350/172(morreu)/187/177 sem saída. ids especiais: `001`=S/BRINCO, `002`=2º animal com brinco 336, `044` com zero à esquerda. DNN já reexecutada nos 245 / 3 fazendas; **EDA (`eda_gmd.ipynb`) ainda foi feita no dataset de 155 — reexecutar.**
+**Tópico atual:** **Coleta fechada, reunião com orientador (2026-09-22).** `dataset_por_animal_modelo_v3.csv` tem **245 animais, 2 fazendas**: **Elvis 174** (113 originais + 61 fundidos do Sonico — ver "Fusão Sonico→Elvis"; forragem Decumbens/MG4/Tanzânia/Marandu, PB 10,42; suplemento proteinado 30/25/20% ou sal mineral) e **Humberto 71** (mix Brachiaria/Cynodon, PB 10,0; via Excel `Pesagem Gado`, aba "Analise 1 pes ate ultima" = 1ª→última pesagem; `proporcao_bos_indicus_pct` **varia** por raça da coluna descrição — Nelore/Guzerá 100, Angus 50, resto 75; brinco 150 colidiu → id `150H`). Coords próprias por fazenda. Todas fêmeas; suplemento por lote (proteinado 30/25% a 0,3% do peso; **sal mineral** PB 0/fixo 0,10 kg/dia); transporte 1/2 conforme origem; clima do NASA POWER por janela (coords da respectiva fazenda). Ingestão via `ingest_sheet.py`, transcrição **por partes** com checagem de consistência (ganho=saída−entrada, gmd=ganho/dias). Correções aplicadas: livro mestre reconciliado (conflitos 245/356/360/365/366/343 sobrescritos), brinco 426 corrigido, 61 animais reatribuídos Elvis→Sonico (histórico, pré-fusão). Fora: 335/350/172(morreu)/187/177 sem saída. ids especiais: `001`=S/BRINCO, `002`=2º animal com brinco 336, `044` com zero à esquerda. EDA e DNN **reexecutadas no dataset final** (245/2 fazendas, pós-fusão).
 
 ### Abordagem definida
-- Modelos (do mais simples ao mais complexo): (1) Regressão Linear, (2) Random Forest, (3) Gradient Boosting/XGBoost, (4) MLP/DNN. TabPFN/transformer **fora por ora** (só compensaria com N ordens de grandeza maior).
+- Modelos (decidido em reunião 2026-09-22): (1) Regressão Linear, (2) XGBoost ou Random Forest, (3) **TabPFN**, (4) MLP/DNN — **a DNN está congelada** (config final: `(128,64,32,16)`, dropout 0, lr 1e-2, BN=True, wd 1e-4; não mexer em arquitetura/hiperparâmetro salvo se o dataset mudar de novo).
 - Pré-processamento **compartilhado** em `data_prep.py` → comparação justa; resultados em `results/model_comparison.csv`.
 - **Atenção:** as "Descobertas dos experimentos" abaixo são do **schema antigo + dados sintéticos** (`cattle_dataset_2.csv`, já removido) — **obsoletas**, referência histórica só. `data_prep.py` já é v3; os números reais virão dos novos notebooks sobre o dataset por-animal.
 
@@ -76,12 +98,11 @@ A DNN é o **modelo central do TCC**, mas o trabalho evoluiu para um **estudo co
 Manter a DNN como objeto de estudo do TCC e enquadrar as árvores como baseline comparativo — a comparação, com a curva de aprendizado justificando o porquê, é a contribuição. Manter **uma única base de features (as cruas)** para a comparação ser justa. Confirmar o enquadramento do tema com o Prof. Ciniro.
 
 ### Próximo passo
-- ✅ **Feito:** EDA (`eda_gmd.ipynb`) e reescrita do `data_prep.py` p/ v3 (verificado: 8 preditores, `get_cv` (hoje 5×49 por fazenda) + `leave_one_property_out`, `augment_train` jitter).
-- **Smoke test (RegLinear):** CV 10-fold já dá **R²~0.37** (sinal linear real, vs ~0.03 no antigo sintético); **LOPO catastrófico p/ o linear** (R² muito negativo) — as 2 fazendas são bem diferentes (Sonico: nascidos leves 80–107 kg, ciclos longos até 1253 d, sal mineral); esperar RF melhor no LOPO (não extrapola).
-- ✅ **DNN** (`dnn_gmd.ipynb`) nos **245 animais / 3 fazendas** (9 preditores) com o **split novo** (`get_cv` = **5 folds disjuntos × 49 de teste**, por fazenda; split interno early-stop 25%; grid 72 configs): melhor **(128,64,32,16), dropout 0, lr 1e-2, BN=True, wd 1e-4**. **R² 0,814 (single) → 0,822 (ensemble 5 seeds, modelo final), MAE 0,029**, R² std entre folds 0,067; baseline MAE 0,079. Com jitter feature-only: R² 0,841 / MAE 0,028 (1 seed — dentro do ruído entre folds, não tratar como ganho sem repetir). **LOPO:** Humberto **+0,58**, Elvis −0,66, **Sonico −266** (outlier: nascidos leves/ciclos longos/sal mineral) — a rede continua quebrando em fazenda nova. ⚠️ Números **não comparáveis** aos do CV 10-fold antigo (0,805/0,838).
-- ⚠️ **Jitter — lição importante:** a augmentation que **rederiva o alvo** a partir do `peso_entrada` (feature que entra em `gmd=(peso_saida−peso_entrada)/dias`) **acopla feature↔alvo e infla o R² artificialmente** (diagnóstico: subia 0,67→0,81 só aumentando o ruído). Trocado por **jitter feature-only** (perturba features, mantém GMD real) em `data_prep.augment_train` — e assim o jitter **não ajuda** (0,665→0,61). Ou seja: o número honesto da DNN é **~0,665 sem jitter**.
-- ⚠️ **Baselines** (Linear/RF/GB) foram removidos do repo; os números antigos (CV 10-fold: DNN 0,838 ≫ GB 0,50 > RF 0,48 > Linear 0,42; LOPO: RF ~0, GB −0,96, Linear −66, DNN −51) **não valem mais** p/ o split novo — refazer p/ a comparação. Trade-off já visto: rede vence *dentro* da distribuição, árvores generalizam melhor p/ **fazenda nova**. **Suspeita:** o CV não-agrupado (mesmo estratificado por fazenda) favorece a DNN (`temperatura`/`proporcao_ciclo_seca` ≈ "ID do lote" → colegas de lote em treino/teste); o **LOPO é a métrica honesta**.
-- **Agora:** refazer baselines no split novo; investigar **CV agrupado por lote (cohort = fazenda+data_entrada+data_saida)** (confirmar se o 0,84 da DNN cai — testa a suspeita de vazamento), rodar **SHAP** no melhor modelo, e tratar a multicolinearidade `media_suplemento`×`pb_suplemento` (0,93) na leitura do SHAP.
+- ✅ **Feito:** EDA (`eda_gmd.ipynb`) e `data_prep.py` v3 (verificado: 9 preditores, `get_cv` = 5 folds×49 por fazenda, `leave_one_property_out`, `augment_train` jitter) — reexecutados no dataset final pós-fusão (245/2 fazendas).
+- ✅ **Fusão Sonico→Elvis aplicada** (ver seção própria) — dataset final **245 animais, Elvis 174 / Humberto 71**.
+- ✅ **DNN CONGELADA — resultado final** (`dnn_gmd.ipynb`, dataset pós-fusão, 245/2 fazendas, 9 preditores, `get_cv` 5×49 por fazenda, grid 72 configs): melhor **(128,64,32,16), dropout 0, lr 1e-2, BN=True, wd 1e-4**. **R² 0,843 (single) → 0,820 (ensemble 5 seeds — piorou dessa vez, não ajuda aqui), MAE 0,028**, R² std entre folds 0,12; baseline MAE 0,079. Jitter (1 seed): R² 0,861 — não tratar como ganho sem repetir. **LOPO (agora só 2 splits):** testa Humberto R² **0,353** (melhor que qualquer LOPO anterior), testa Elvis R² **−49,3** (quebra — Elvis pós-fusão é maior/mais heterogêneo, difícil de prever a partir só do Humberto). Salvo em `results/model_comparison.csv` (`cv_R2=0,820`, `lopo_R2=−24,49` = média dos 2 splits). ⚠️ Números **não comparáveis** aos de antes da fusão (3 fazendas) nem ao CV 10-fold antigo.
+- ⚠️ **Jitter — lição importante (mantém-se):** a augmentation que **rederiva o alvo** a partir do `peso_entrada` acopla feature↔alvo e **infla o R² artificialmente** — por isso `data_prep.augment_train` é **feature-only** (mantém GMD real). Ganho do jitter feature-only é pequeno/dentro do ruído entre folds; não repetir o diagnóstico salvo se o dataset mudar.
+- **Próximo (reunião 2026-09-22):** construir os baselines que faltam — **Regressão Linear, XGBoost ou RF, e TabPFN** — no `get_cv()` atual (5×49 por fazenda), pra comparar de verdade com a DNN congelada. Depois: **CV agrupado por lote** (cohort = propriedade+data_entrada+data_saida, testa se o R² da DNN é inflado por vazamento) e **SHAP** no melhor modelo (cuidado com a multicolinearidade `media_suplemento`×`pb_suplemento`, r=0,93).
 
 ---
 

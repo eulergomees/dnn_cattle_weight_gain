@@ -20,6 +20,7 @@ A DNN é o **modelo central do TCC** — arquitetura/hiperparâmetros **congelad
 - `baselines/` — `01_linear`, `02_xgboost` (grid + `sk_eval`), `03_tabpfn` (pronto, aguardando licença/`TABPFN_TOKEN`). `support_scripts/sk_eval.py` — helpers de avaliação sklearn (cv_eval, oof, lopo, registrar) compartilhados, mesmo esquema do `data_prep`.
 - `cv_agrupado_por_lote.ipynb` — diagnóstico: compara `get_cv()` (por fazenda) com **GroupKFold por lote** (cohort = propriedade+data_entrada+data_saida) nos 4 modelos, sem mudar `data_prep`. Resultado em `results/cv_lote_vs_farm.csv`.
 - `shap_tabpfn.ipynb` — **SHAP** (`KernelExplainer`) do TabPFN, modelo treinado nos 245 animais. `results/shap_values_tabpfn.npy` (array `(245,9)`, mesma ordem de `scale_cols`).
+- `article/` — **artigo de evento (IEEE, `IEEEtran`), separado da monografia do TCC** (que segue `abntex2`, ainda não iniciada). Título já definido: "Comparação de modelos de aprendizado de máquina para previsão do ganho médio diário de bovinos de corte". Só `.tex`/`.cls`/`fig1.png` versionados; build (`.aux`/`.log`/`.pdf`/...) fica local (`.gitignore`).
 
 ## Dados
 

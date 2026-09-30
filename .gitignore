@@ -7,3 +7,16 @@ gen
 .claude
 __pycache__/
 .env
+
+# LaTeX build artifacts (article/) — só o .tex (e o .pdf final) são versionados
+*.aux
+*.log
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.out
+*.toc
+*.bbl
+*.blg
+*.lof
+*.lot

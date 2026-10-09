@@ -1,289 +1,252 @@
 \documentclass[conference]{IEEEtran}
 \IEEEoverridecommandlockouts
-% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
-%Template version as of 6/27/2024
 
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian]{babel}
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
-\usepackage{algorithmic}
 \usepackage{graphicx}
-\usepackage{textcomp}
+\usepackage{booktabs}
 \usepackage{xcolor}
+\usepackage[hyphens]{url}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
 
-\title{Comparação de modelos de aprendizado de máquina para previsão do ganho médio diário de bovinos de corte}
+\title{Comparação de modelos de aprendizado de máquina para estimativa do ganho médio diário de bovinos de corte}
 
-\author{\IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address or ORCID}
+\author{\IEEEauthorblockN{Euler Gomes da Rocha}
+\IEEEauthorblockA{\textit{Departamento de Engenharia e Computação} \\
+\textit{Instituto Federal de Minas Gerais -- Campus Bambuí}\\
+Bambuí, Brasil \\
+eulergomesrocha@gmail.com
+}
 \and
-\IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address or ORCID}
+\IEEEauthorblockN{Ciniro Aparecido Leite Nametala}
+\IEEEauthorblockA{\textit{Departamento de Engenharia e Computação} \\
+\textit{Instituto Federal de Minas Gerais -- Campus Bambuí}\\
+Bambuí, Brasil \\
+ciniro.nametala@ifmg.edu.br
+}
 \and
-\IEEEauthorblockN{3\textsuperscript{rd} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address or ORCID}
-\and
-\IEEEauthorblockN{4\textsuperscript{th} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address or ORCID}
-\and
-\IEEEauthorblockN{5\textsuperscript{th} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address or ORCID}
-\and
-\IEEEauthorblockN{6\textsuperscript{th} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address or ORCID}
+\IEEEauthorblockN{Tamires Martins Rezende}
+\IEEEauthorblockA{\textit{Fundação para Inovações Tecnológicas - FITec Labs} \\
+Belo Horizonte, Brasil \\
+inctamires@gmail.com
+}
 }
 
 \maketitle
 
 \begin{abstract}
-This document is a model and instructions for \LaTeX.
-This and the IEEEtran.cls file define the components of your paper [title, text, heads, etc.]. *CRITICAL: Do Not Use Symbols, Special Characters, Footnotes, 
-or Math in Paper Title or Abstract.
+O ganho médio diário de peso (GMD) orienta decisões de manejo e suplementação na pecuária de corte. Este trabalho compara regressão linear, XGBoost, uma rede neural densa (MLP) e o TabPFN, um modelo de fundação para dados tabulares, na estimativa do GMD de 245 bovinos de duas propriedades de Bambuí (MG), descritos por nove variáveis de animal, manejo, suplementação e clima, avaliando a generalização para lotes e propriedades não vistos no treinamento. A avaliação combinou validação cruzada estratificada por propriedade, validação cruzada agrupada por lote e treinamento em uma propriedade com teste na outra. Na validação por propriedade, o TabPFN ($R^2 = 0{,}86$; erro absoluto médio de 0,015~kg/dia) e a MLP ($R^2 = 0{,}82$; 0,028~kg/dia) superaram o XGBoost ($R^2 = 0{,}51$) e a regressão linear ($R^2 = 0{,}43$). Com validação agrupada por lote, o $R^2$ de todos os modelos diminuiu, e nenhum modelo generalizou de forma confiável para a outra propriedade.
 \end{abstract}
 
 \begin{IEEEkeywords}
-component, formatting, style, styling, insert.
+aprendizado de máquina, bovinos de corte, ganho médio diário, TabPFN, análise exploratória, validação cruzada.
 \end{IEEEkeywords}
 
-\section{Introduction}
-This document is a model and instructions for \LaTeX.
-Please observe the conference page limits. For more information about how to become an IEEE Conference author or how to write your paper, please visit   IEEE Conference Author Center website: https://conferences.ieeeauthorcenter.ieee.org/.
+\noindent\textbf{\textit{Abstract}---}Average daily gain (ADG) guides management and supplementation decisions in beef cattle production. We compare linear regression, XGBoost, a dense neural network (MLP) and TabPFN, a tabular foundation model, for estimating the ADG of 245 cattle from two farms in Bambuí, Brazil, described by nine animal, management, supplementation and climate variables, and evaluate generalization to unseen cohorts and farms. Models were assessed with farm-stratified cross-validation, cohort-grouped cross-validation, and training on one farm with testing on the other. Under farm-stratified cross-validation, TabPFN ($R^2 = 0.86$; mean absolute error 0.015~kg/day) and the MLP ($R^2 = 0.82$; 0.028~kg/day) outperformed XGBoost ($R^2 = 0.51$) and linear regression ($R^2 = 0.43$). Under cohort-grouped validation the $R^2$ of every model decreased, and no model generalized reliably to the other farm.
 
-\subsection{Maintaining the Integrity of the Specifications}
+\section{Introdução}
 
-The IEEEtran class file is used to format your paper and style the text. All margins, 
-column widths, line spaces, and text fonts are prescribed; please do not 
-alter them. You may note peculiarities. For example, the head margin
-measures proportionately more than is customary. This measurement 
-and others are deliberate, using specifications that anticipate your paper 
-as one part of the entire proceedings, and not as an independent document. 
-Please do not revise any of the current designations.
+O agronegócio brasileiro encerrou 2025 com exportações recordes de US\$~169 bilhões~\cite{ministerio2026}. Na fazenda, o ganho médio diário de peso (GMD) é o indicador que resume o desempenho de um animal ou lote~\cite{alencastrofilho2017}: é com ele que se projeta a data de abate, se avalia a resposta à suplementação em pastagens tropicais~\cite{tambara2021} e se decide o manejo nutricional. Prever o GMD com antecedência ou estimá-lo a partir de registros de rotina é, portanto, uma necessidade prática.
 
-\section{Prepare Your Paper Before Styling}
-Before you begin to format your paper, first write and save the content as a 
-separate text file. Complete all content and organizational editing before 
-formatting. Please note sections \ref{AA} to \ref{FAT} below for more information on 
-proofreading, spelling and grammar.
+A aprendizagem de máquina é cada vez mais usada em sistemas agropecuários, com bovinos entre os animais mais estudados e redes neurais entre as técnicas mais eficientes~\cite{benos2021}, e a pecuária de precisão combina sensores e algoritmos para apoiar decisões de manejo~\cite{curti2023}. Para ganho e peso de bovinos de corte há trabalhos com regressão, árvores e boosting~\cite{tuyishime2025}, classificação com árvores, redes neurais e regressão logística~\cite{grzesiak2023} e predição genômica de características de crescimento~\cite{hay2024}.
 
-Keep your text and graphic files separate until after the text has been 
-formatted and styled. Do not number text heads---{\LaTeX} will do that 
-for you.
+Divisões aleatórias de animais medem o desempenho para animais semelhantes aos do treino, mas não para lotes ou propriedades novas, o que motiva avaliar também com lotes e propriedades inteiros fora do treino. Além disso, modelos de fundação para dados tabulares, como o TabPFN~\cite{hollmann2025tabpfn}, foram propostos para conjuntos de até 10 mil amostras, faixa em que se situa este estudo.
 
-\subsection{Abbreviations and Acronyms}\label{AA}
-Define abbreviations and acronyms the first time they are used in the text, 
-even after they have been defined in the abstract. Abbreviations such as 
-IEEE, SI, MKS, CGS, ac, dc, and rms do not have to be defined. Do not use 
-abbreviations in the title or heads unless they are unavoidable.
+As contribuições deste trabalho são: (i)~a comparação de regressão linear, XGBoost~\cite{chen2016xgboost}, uma MLP e o TabPFN em um mesmo conjunto de 245 bovinos, com os mesmos particionamentos e métricas; (ii)~uma avaliação em três níveis de rigor (por animal e propriedade, por lote e entre propriedades); (iii)~a medição da queda de desempenho quando lotes inteiros são retirados do treino; e (iv)~a interpretação do melhor modelo com valores SHAP~\cite{lundberg2017shap}.
 
-\subsection{Units}
-\begin{itemize}
-\item Use either SI (MKS) or CGS as primary units. (SI units are encouraged.) English units may be used as secondary units (in parentheses). An exception would be the use of English units as identifiers in trade, such as ``3.5-inch disk drive''.
-\item Avoid combining SI and CGS units, such as current in amperes and magnetic field in oersteds. This often leads to confusion because equations do not balance dimensionally. If you must use mixed units, clearly state the units for each quantity that you use in an equation.
-\item Do not mix complete spellings and abbreviations of units: ``Wb/m\textsuperscript{2}'' or ``webers per square meter'', not ``webers/m\textsuperscript{2}''. Spell out units when they appear in text: ``. . . a few henries'', not ``. . . a few H''.
-\item Use a zero before decimal points: ``0.25'', not ``.25''. Use ``cm\textsuperscript{3}'', not ``cc''.)
-\end{itemize}
+O restante do artigo está organizado assim: a Seção~\ref{sec:rel} resume trabalhos relacionados; a Seção~\ref{sec:met} descreve os dados, os modelos e a validação; a Seção~\ref{sec:res} apresenta os resultados; a Seção~\ref{sec:disc} os discute, com as limitações; e a Seção~\ref{sec:concl} conclui.
 
-\subsection{Equations}
-Number equations consecutively. To make your 
-equations more compact, you may use the solidus (~/~), the exp function, or 
-appropriate exponents. Italicize Roman symbols for quantities and variables, 
-but not Greek symbols. Use a long dash rather than a hyphen for a minus 
-sign. Punctuate equations with commas or periods when they are part of a 
-sentence, as in:
+\section{Trabalhos relacionados}\label{sec:rel}
+
+Revisões recentes mostram que o aprendizado de máquina na agricultura abrange manejo de culturas, água, solo e pecuária, com bovinos e ovinos entre os animais mais investigados~\cite{benos2021}, e que sensores e algoritmos têm sido combinados em produção e reprodução animal~\cite{curti2023}.
+
+Sobre o ganho de peso, Tuyishime e Adewusi~\cite{tuyishime2025} compararam regressão linear, árvore de decisão, XGBoost e regressão por vetores de suporte para prever o peso aos 36 meses; a árvore de decisão teve o melhor desempenho ($R^2 = 0{,}927$; erro absoluto médio de 2,21~kg), os pesos em idades anteriores foram os preditores mais fortes e variáveis ambientais tiveram efeito moderado. Grzesiak et al.~\cite{grzesiak2023} compararam árvores de decisão, redes neurais e regressão logística para classificar o ganho diário de bezerros de corte das raças Simmental e Limousin, com a floresta aleatória apresentando a melhor área sob a curva (0,82 e 0,81). Hay~\cite{hay2024} comparou floresta aleatória, máquinas de vetores de suporte, redes convolucionais e perceptrons multicamadas com o GBLUP na predição genômica de peso ao nascer, à desmama e ao sobreano, e o GBLUP foi superior no conjunto, o que lembra que métodos estatísticos clássicos podem superar modelos de aprendizado de máquina.
+
+Outra linha estima o peso a partir de imagens: imagens tridimensionais de vacas leiteiras~\cite{gebreyesus2023}, comparações de modalidades de dados com aprendizado profundo~\cite{afridi2024} e segmentação semântica combinada com redes de retropropagação~\cite{xu2024}. Esses trabalhos têm outro alvo (o peso em um instante, não o ganho em um ciclo) e outro tipo de entrada. Do lado zootécnico, a meta-análise de Tambara et al.~\cite{tambara2021} trata do efeito da suplementação sobre a produção de bovinos de corte em pastagens tropicais brasileiras nas águas e na seca, e motiva a inclusão de variáveis de suplementação e de estação.
+
+Em relação a esses estudos, o presente trabalho usa dados observacionais de campo com ciclos longos (de 43 a 1253 dias), compara quatro famílias de modelos, incluindo um modelo de fundação tabular, e concentra a análise no desenho da validação.
+
+\section{Materiais e métodos}\label{sec:met}
+
+\subsection{Dados}
+
+O conjunto contém 245 bovinos fêmeas de duas propriedades da região de Bambuí (MG), identificadas aqui como A (174 animais) e B (71 animais), com entradas a partir de fevereiro de 2020 e saídas até maio de 2025. Cada linha representa um animal, da pesagem de entrada à pesagem de saída, e o alvo é
 \begin{equation}
-a+b=\gamma\label{eq}
+\mathrm{GMD} = \frac{\text{peso de sa\'ida} - \text{peso de entrada}}{\text{dias de perman\^encia}}\ \ [\text{kg/dia}].
 \end{equation}
+O GMD médio é 0,350~kg/dia (desvio-padrão 0,117; mínimo $-0{,}186$; máximo 0,676), com quatro valores negativos (perda de peso no ciclo, detalhada na Seção~\ref{sec:eda}). O peso de entrada médio é 177~kg (25--298~kg) e a permanência média, 354 dias (43--1253). Cinco animais sem pesagem de saída foram excluídos.
 
-Be sure that the 
-symbols in your equation have been defined before or immediately following 
-the equation. Use ``\eqref{eq}'', not ``Eq.~\eqref{eq}'' or ``equation \eqref{eq}'', except at 
-the beginning of a sentence: ``Equation \eqref{eq} is . . .''
+A propriedade A inclui 61 animais registrados originalmente em uma terceira propriedade, mas que passaram a maior parte da vida na propriedade A. Por decisão de projeto, esses animais foram reclassificados como pertencentes à A e as variáveis que dependem da propriedade foram substituídas pelas da A: proteína bruta (PB) da forragem, PB do suplemento (fixada em 25\%) e as variáveis climáticas, recalculadas com as coordenadas da A sobre a mesma janela de datas. Peso, permanência, GMD e suplementação por peso foram mantidos.
 
-\subsection{\LaTeX-Specific Advice}
+As variáveis climáticas foram derivadas da base NASA POWER~\cite{nasapower2026}: temperatura média diária do ar a 2~m na janela entre a entrada e a saída de cada animal, e a proporção do ciclo na estação seca (dias entre abril e setembro). O lote é definido pela tupla (propriedade, data de entrada, data de saída), que resulta em 66 lotes (59 em A e 7 em B), 29 deles com um único animal e o maior com 19.
 
-Please use ``soft'' (e.g., \verb|\eqref{Eq}|) cross references instead
-of ``hard'' references (e.g., \verb|(1)|). That will make it possible
-to combine sections, add equations, or change the order of figures or
-citations without having to go through the file line by line.
+\subsection{Variáveis preditoras}
 
-Please don't use the \verb|{eqnarray}| equation environment. Use
-\verb|{align}| or \verb|{IEEEeqnarray}| instead. The \verb|{eqnarray}|
-environment leaves unsightly spaces around relation symbols.
+Foram usadas nove variáveis (Tabela~\ref{tab:vars}). Ficaram de fora os identificadores e as datas, o peso de saída (que define o alvo), a precipitação acumulada (correlação de 0,96 com a permanência) e três variáveis constantes no conjunto (sexo, frequência de suplementação e rotação de piquete).
 
-Please note that the \verb|{subequations}| environment in {\LaTeX}
-will increment the main equation counter even when there are no
-equation numbers displayed. If you forget that, you might write an
-article in which the equation numbers skip from (17) to (20), causing
-the copy editors to wonder if you've discovered a new method of
-counting.
-
-{\BibTeX} does not work by magic. It doesn't get the bibliographic
-data from thin air but from .bib files. If you use {\BibTeX} to produce a
-bibliography you must send the .bib files. 
-
-{\LaTeX} can't read your mind. If you assign the same label to a
-subsubsection and a table, you might find that Table I has been cross
-referenced as Table IV-B3. 
-
-{\LaTeX} does not have precognitive abilities. If you put a
-\verb|\label| command before the command that updates the counter it's
-supposed to be using, the label will pick up the last counter to be
-cross referenced instead. In particular, a \verb|\label| command
-should not go before the caption of a figure or a table.
-
-Do not use \verb|\nonumber| inside the \verb|{array}| environment. It
-will not stop equation numbers inside \verb|{array}| (there won't be
-any anyway) and it might stop a wanted equation number in the
-surrounding equation.
-
-\subsection{Some Common Mistakes}\label{SCM}
-\begin{itemize}
-\item The word ``data'' is plural, not singular.
-\item The subscript for the permeability of vacuum $\mu_{0}$, and other common scientific constants, is zero with subscript formatting, not a lowercase letter ``o''.
-\item In American English, commas, semicolons, periods, question and exclamation marks are located within quotation marks only when a complete thought or name is cited, such as a title or full quotation. When quotation marks are used, instead of a bold or italic typeface, to highlight a word or phrase, punctuation should appear outside of the quotation marks. A parenthetical phrase or statement at the end of a sentence is punctuated outside of the closing parenthesis (like this). (A parenthetical sentence is punctuated within the parentheses.)
-\item A graph within a graph is an ``inset'', not an ``insert''. The word alternatively is preferred to the word ``alternately'' (unless you really mean something that alternates).
-\item Do not use the word ``essentially'' to mean ``approximately'' or ``effectively''.
-\item In your paper title, if the words ``that uses'' can accurately replace the word ``using'', capitalize the ``u''; if not, keep using lower-cased.
-\item Be aware of the different meanings of the homophones ``affect'' and ``effect'', ``complement'' and ``compliment'', ``discreet'' and ``discrete'', ``principal'' and ``principle''.
-\item Do not confuse ``imply'' and ``infer''.
-\item The prefix ``non'' is not a word; it should be joined to the word it modifies, usually without a hyphen.
-\item There is no period after the ``et'' in the Latin abbreviation ``et al.''.
-\item The abbreviation ``i.e.'' means ``that is'', and the abbreviation ``e.g.'' means ``for example''.
-\end{itemize}
-An excellent style manual for science writers is \cite{b7}.
-
-\subsection{Authors and Affiliations}\label{AAA}
-\textbf{The class file is designed for, but not limited to, six authors.} A 
-minimum of one author is required for all conference articles. Author names 
-should be listed starting from left to right and then moving down to the 
-next line. This is the author sequence that will be used in future citations 
-and by indexing services. Names should not be listed in columns nor group by 
-affiliation. Please keep your affiliations as succinct as possible (for 
-example, do not differentiate among departments of the same organization).
-
-\subsection{Identify the Headings}\label{ITH}
-Headings, or heads, are organizational devices that guide the reader through 
-your paper. There are two types: component heads and text heads.
-
-Component heads identify the different components of your paper and are not 
-topically subordinate to each other. Examples include Acknowledgments and 
-References and, for these, the correct style to use is ``Heading 5''. Use 
-``figure caption'' for your Figure captions, and ``table head'' for your 
-table title. Run-in heads, such as ``Abstract'', will require you to apply a 
-style (in this case, italic) in addition to the style provided by the drop 
-down menu to differentiate the head from the text.
-
-Text heads organize the topics on a relational, hierarchical basis. For 
-example, the paper title is the primary text head because all subsequent 
-material relates and elaborates on this one topic. If there are two or more 
-sub-topics, the next level head (uppercase Roman numerals) should be used 
-and, conversely, if there are not at least two sub-topics, then no subheads 
-should be introduced.
-
-\subsection{Figures and Tables}\label{FAT}
-\paragraph{Positioning Figures and Tables} Place figures and tables at the top and 
-bottom of columns. Avoid placing them in the middle of columns. Large 
-figures and tables may span across both columns. Figure captions should be 
-below the figures; table heads should appear above the tables. Insert 
-figures and tables after they are cited in the text. Use the abbreviation 
-``Fig.~\ref{fig}'', even at the beginning of a sentence.
-
-\begin{table}[htbp]
-\caption{Table Type Styles}
-\begin{center}
-\begin{tabular}{|c|c|c|c|}
-\hline
-\textbf{Table}&\multicolumn{3}{|c|}{\textbf{Table Column Head}} \\
-\cline{2-4} 
-\textbf{Head} & \textbf{\textit{Table column subhead}}& \textbf{\textit{Subhead}}& \textbf{\textit{Subhead}} \\
-\hline
-copy& More table copy$^{\mathrm{a}}$& &  \\
-\hline
-\multicolumn{4}{l}{$^{\mathrm{a}}$Sample of a Table footnote.}
+\begin{table}[t]
+\caption{Variáveis preditoras.}
+\label{tab:vars}
+\centering
+\footnotesize
+\begin{tabular}{@{}p{3.35cm}p{4.65cm}@{}}
+\toprule
+\textbf{Variável} & \textbf{Descrição} \\
+\midrule
+\texttt{peso\_\allowbreak entrada\_\allowbreak kg} & Peso na pesagem de entrada (kg) \\
+\texttt{dias\_\allowbreak permanencia} & Dias entre a entrada e a saída \\
+\texttt{proporcao\_\allowbreak bos\_\allowbreak indicus\_\allowbreak pct} & \% \textit{Bos indicus} pela raça (50, 75 ou 100) \\
+\texttt{media\_\allowbreak suplemento\_\allowbreak kg\_\allowbreak dia} & Suplemento médio (kg/dia) \\
+\texttt{pb\_\allowbreak suplemento\_\allowbreak pct} & PB do suplemento (20, 25 ou 30\%) \\
+\texttt{media\_\allowbreak proteina\_\allowbreak bruta\_\allowbreak forragem\_\allowbreak pct} & PB da forragem (10,42\% em A; 10,0\% em B) \\
+\texttt{numero\_\allowbreak eventos\_\allowbreak transporte} & Eventos de transporte (1 a 3) \\
+\texttt{temperatura\_\allowbreak media\_\allowbreak c} & Temperatura média na janela (\textdegree C) \\
+\texttt{proporcao\_\allowbreak ciclo\_\allowbreak seca} & Fração do ciclo entre abril e setembro \\
+\bottomrule
 \end{tabular}
-\label{tab1}
-\end{center}
 \end{table}
 
-\begin{figure}[htbp]
-\centerline{\includegraphics{fig1.png}}
-\caption{Example of a figure caption.}
-\label{fig}
+\subsection{Análise exploratória}\label{sec:eda}
+
+A Figura~\ref{fig:eda} resume o conjunto. As entradas se concentram em 2020 na propriedade B (64 dos 71 animais; os demais em 2021) e se distribuem de 2020 a 2025 na A (de 11 a 46 animais por ano). O GMD é assimétrico à esquerda (assimetria de $-0{,}89$), com média de 0,359~kg/dia na A (desvio-padrão 0,087) e de 0,326~kg/dia na B (0,168), e a B concentra os valores mais extremos. A permanência é maior na A (média de 390 dias, até 1253) que na B (265 dias, máximo de 383); o peso de entrada é semelhante nas duas (178 e 176~kg), mas o de saída difere (315 contra 267~kg). Oito animais (sete da B e um da A) têm ciclos de apenas 43 a 44 dias, inteiramente na estação seca, com GMD médio de $-0{,}018$~kg/dia; entre eles estão os quatro valores negativos, com variações de peso de $-8$ a $-3$~kg, compatíveis com erro de pesagem em intervalos curtos.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.88\textwidth]{figs/fig_eda.pdf}
+\caption{Panorama do conjunto de 245 animais, por propriedade (A em azul, B em laranja): (a)~entradas por ano; (b)~distribuição do GMD; (c)~dias de permanência; (d)~GMD em função do peso de entrada; (e)~GMD em função da proporção do ciclo na estação seca; (f)~GMD por teor de PB do suplemento.}
+\label{fig:eda}
+\end{figure*}
+
+Na A, o teor de PB do suplemento tem três níveis (20, 25 e 30\%, com GMD médio de 0,319, 0,352 e 0,379~kg/dia); na B, todos os animais recebem 30\%. A PB da forragem, o número de eventos de transporte e a raça também diferem entre as propriedades: a A tem 10,42\% de PB da forragem, 1 ou 2 eventos de transporte e todos os animais com 75\% de \textit{Bos indicus}; a B tem 10,0\%, 3 eventos e 75\% (37 animais), 100\% (33) ou 50\% (1).
+
+A Figura~\ref{fig:corr} traz a correlação de Pearson de cada variável com o GMD. A mais forte é a proporção do ciclo na seca ($-0{,}61$), mas ela é puxada pelos oito ciclos curtos descritos acima: sem eles, cai para $-0{,}40$. Peso de entrada ($-0{,}25$) e temperatura média ($+0{,}25$) vêm em seguida, e permanência e suplemento médio têm correlação linear próxima de zero ($+0{,}01$ e $+0{,}03$), o que não exclui relações não lineares. Como as variáveis de manejo variam pouco dentro de cada propriedade, elas se confundem com a própria propriedade: PB da forragem e número de eventos de transporte têm correlação de $-0{,}85$ entre si, e temperatura média e proporção de seca, de $-0{,}59$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\columnwidth]{figs/fig_corr.pdf}
+\caption{Correlação de Pearson entre cada variável preditora e o GMD.}
+\label{fig:corr}
 \end{figure}
 
-Figure Labels: Use 8 point Times New Roman for Figure labels. Use words 
-rather than symbols or abbreviations when writing Figure axis labels to 
-avoid confusing the reader. As an example, write the quantity 
-``Magnetization'', or ``Magnetization, M'', not just ``M''. If including 
-units in the label, present them within parentheses. Do not label axes only 
-with units. In the example, write ``Magnetization (A/m)'' or ``Magnetization 
-\{A[m(1)]\}'', not just ``A/m''. Do not label axes with a ratio of 
-quantities and units. For example, write ``Temperature (K)'', not 
-``Temperature/K''.
+\subsection{Modelos}
 
-\section*{Acknowledgment}
+\textbf{Regressão linear:} mínimos quadrados ordinários com variáveis padronizadas. \textbf{XGBoost}~\cite{chen2016xgboost}: busca em grade de 48 combinações (200 ou 400 árvores; profundidade 2, 3 ou 4; taxa de aprendizado 0,03 ou 0,1; \textit{subsample} 0,8 ou 1; peso mínimo por folha 1 ou 5); a melhor foi 200 árvores, profundidade 3, taxa 0,1, \textit{subsample} 0,8 e peso mínimo 1.
 
-The preferred spelling of the word ``acknowledgment'' in America is without 
-an ``e'' after the ``g''. Avoid the stilted expression ``one of us (R. B. 
-G.) thanks $\ldots$''. Instead, try ``R. B. G. thanks$\ldots$''. Put sponsor 
-acknowledgments in the unnumbered footnote on the first page.
+\textbf{MLP:} rede densa com camadas de 128, 64, 32 e 16 neurônios (12\,641 parâmetros), normalização em lote~\cite{ioffe2015batchnorm} e ReLU após cada camada, saída linear e sem \textit{dropout}. Treino com Adam~\cite{kingma2015adam} (taxa 0,01; decaimento de pesos $10^{-4}$), lotes de 32, perda de Huber~\cite{huber1964robust}, atributos e alvo padronizados (ajuste só no treino), redução da taxa por platô (paciência 40) e parada antecipada (paciência 60) sobre 25\% do treino separados como validação, com no máximo 300 épocas. A arquitetura e os hiperparâmetros vieram de uma grade de 72 configurações (três arquiteturas, \textit{dropout} 0 ou 0,1, três taxas, normalização ligada ou não, decaimento 0 ou $10^{-4}$) e foram então congelados. A MLP reportada é a média das previsões de cinco redes com sementes distintas, implementadas em PyTorch~\cite{pytorch2023}.
 
-\section*{References}
+\textbf{TabPFN:} modelo de fundação para dados tabulares; a versão descrita por Hollmann et al.~\cite{hollmann2025tabpfn} foi pré-treinada em milhões de conjuntos de dados sintéticos. Não há atualização de pesos: ao receber os animais de treino, o modelo os usa como contexto e prevê os de teste (aprendizado em contexto). Usou-se o \texttt{TabPFNRegressor} padrão do pacote \texttt{tabpfn} 9.0.0 (modelo 3.5~\cite{jager2026tabpfn35}), com atributos não escalonados e sem ajuste de hiperparâmetros.
 
-Please number citations consecutively within brackets \cite{b1}. The 
-sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference 
-number, as in \cite{b3}---do not use ``Ref. \cite{b3}'' or ``reference \cite{b3}'' except at 
-the beginning of a sentence: ``Reference \cite{b3} was the first $\ldots$''
+Um aumento de dados por ruído de medição nos atributos (peso de entrada e temperatura), aplicado só ao treino, foi testado e não trouxe ganho consistente (piorou o XGBoost e o TabPFN, não alterou a regressão linear e elevou o $R^2$ da MLP de 0,843 para 0,861 em uma execução, dentro da variação entre execuções); os resultados reportados não o usam. A regressão linear e as rotinas de validação são do scikit-learn~\cite{pedregosa2011sklearn}.
 
-Number footnotes separately in superscripts. Place the actual footnote at 
-the bottom of the column in which it was cited. Do not put footnotes in the 
-abstract or reference list. Use letters for table footnotes.
+\subsection{Protocolo de validação}
 
-Unless there are six authors or more give all authors' names; do not use 
-``et al.''. Papers that have not been published, even if they have been 
-submitted for publication, should be cited as ``unpublished'' \cite{b4}. Papers 
-that have been accepted for publication should be cited as ``in press'' \cite{b5}. 
-Capitalize only the first word in a paper title, except for proper nouns and 
-element symbols.
+Três esquemas foram usados, todos com ajuste de escalas apenas no treino.
 
-For papers published in translation journals, please give the English 
-citation first, followed by the original foreign-language citation \cite{b6}.
+\textbf{(1)~Validação cruzada por propriedade.} Cinco dobras disjuntas, cada uma com 49 animais de teste estratificados pela propriedade (35 de A e 14 de B em quatro dobras; 34 e 15 na outra), e 196 de treino. Cada animal é testado uma vez.
 
-\begin{thebibliography}{00}
-\bibitem{b1} G. Eason, B. Noble, and I. N. Sneddon, ``On certain integrals of Lipschitz-Hankel type involving products of Bessel functions,'' Phil. Trans. Roy. Soc. London, vol. A247, pp. 529--551, April 1955.
-\bibitem{b2} J. Clerk Maxwell, A Treatise on Electricity and Magnetism, 3rd ed., vol. 2. Oxford: Clarendon, 1892, pp.68--73.
-\bibitem{b3} I. S. Jacobs and C. P. Bean, ``Fine particles, thin films and exchange anisotropy,'' in Magnetism, vol. III, G. T. Rado and H. Suhl, Eds. New York: Academic, 1963, pp. 271--350.
-\bibitem{b4} K. Elissa, ``Title of paper if known,'' unpublished.
-\bibitem{b5} R. Nicole, ``Title of paper with only first word capitalized,'' J. Name Stand. Abbrev., in press.
-\bibitem{b6} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ``Electron spectroscopy studies on magneto-optical media and plastic substrate interface,'' IEEE Transl. J. Magn. Japan, vol. 2, pp. 740--741, August 1987 [Digests 9th Annual Conf. Magnetics Japan, p. 301, 1982].
-\bibitem{b7} M. Young, The Technical Writer's Handbook. Mill Valley, CA: University Science, 1989.
-\bibitem{b8} D. P. Kingma and M. Welling, ``Auto-encoding variational Bayes,'' 2013, arXiv:1312.6114. [Online]. Available: https://arxiv.org/abs/1312.6114
-\bibitem{b9} S. Liu, ``Wi-Fi Energy Detection Testbed (12MTC),'' 2023, gitHub repository. [Online]. Available: https://github.com/liustone99/Wi-Fi-Energy-Detection-Testbed-12MTC
-\bibitem{b10} ``Treatment episode data set: discharges (TEDS-D): concatenated, 2006 to 2009.'' U.S. Department of Health and Human Services, Substance Abuse and Mental Health Services Administration, Office of Applied Studies, August, 2013, DOI:10.3886/ICPSR30122.v2
-\bibitem{b11} K. Eves and J. Valasek, ``Adaptive control for singularly perturbed systems examples,'' Code Ocean, Aug. 2023. [Online]. Available: https://codeocean.com/capsule/4989235/tree
-\end{thebibliography}
+\textbf{(2)~Treino em uma propriedade, teste na outra.} Treina-se em A e testa-se em B, e vice-versa, sem novo ajuste dos modelos.
 
-\vspace{12pt}
-\color{red}
-IEEE conference templates contain guidance text for composing and formatting conference papers. Please ensure that all template text is removed from your conference paper prior to submission to the conference. Failure to remove the template text from your paper may result in your paper not being published.
+\textbf{(3)~Validação cruzada agrupada por lote.} Cinco dobras (\textit{GroupKFold}) em que nenhum lote é dividido entre treino e teste. As dobras têm 49 animais, mas não são estratificadas por propriedade (uma delas contém apenas animais de A). Os modelos usam as configurações já escolhidas, sem novo ajuste.
+
+As métricas são o erro absoluto médio (MAE, em kg/dia) e o coeficiente de determinação $R^2$, calculados em cada dobra e resumidos pela média e pelo desvio-padrão entre dobras. Como referência, usa-se o preditor ingênuo que prevê a média do GMD do treino. A seleção de hiperparâmetros da MLP e do XGBoost usou as mesmas dobras do esquema~(1), o que favorece esses dois modelos nessa comparação; o TabPFN não foi ajustado.
+
+\subsection{Interpretação}
+
+Os valores SHAP~\cite{lundberg2017shap} do TabPFN foram calculados com o \textit{KernelExplainer}, que só exige a função de previsão, com 20 amostras de fundo e número de amostras automático, sobre o modelo ajustado nos 245 animais. Reporta-se o valor absoluto médio por variável.
+
+\section{Resultados}\label{sec:res}
+
+\subsection{Validação cruzada por propriedade}
+
+A Tabela~\ref{tab:cv} mostra o desempenho no esquema (1). O TabPFN obteve o menor erro (MAE de 0,0145~kg/dia, 82\% abaixo do preditor ingênuo, de 0,0796) e o maior $R^2$ (0,863), seguido da MLP (0,820; MAE de 0,0285). O XGBoost e a regressão linear ficaram bem abaixo ($R^2$ de 0,508 e 0,426). O desvio-padrão do $R^2$ entre as dobras é alto, sobretudo para TabPFN, XGBoost e regressão linear: a primeira dobra teve $R^2$ muito menor que as demais para esses três modelos (negativo nos dois últimos, 0,47 no TabPFN).
+
+\begin{table}[t]
+\caption{Validação cruzada por propriedade (5 dobras, 49 animais de teste cada). Média $\pm$ desvio-padrão entre dobras. MAE do preditor ingênuo: 0,0796.}
+\label{tab:cv}
+\centering
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Modelo} & \textbf{$R^2$} & \textbf{MAE (kg/dia)} \\
+\midrule
+TabPFN & $0{,}863 \pm 0{,}220$ & $0{,}0145 \pm 0{,}0072$ \\
+MLP (5 sementes) & $0{,}820 \pm 0{,}120$ & $0{,}0285 \pm 0{,}0042$ \\
+XGBoost & $0{,}508 \pm 0{,}346$ & $0{,}0512 \pm 0{,}0061$ \\
+Regressão linear & $0{,}426 \pm 0{,}352$ & $0{,}0629 \pm 0{,}0063$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Validação agrupada por lote}
+
+A Figura~\ref{fig:cv} compara o esquema (1) com a validação agrupada por lote. Todos os modelos pioram quando os lotes não podem ser divididos entre treino e teste: a regressão linear cai de 0,426 para 0,066, o XGBoost de 0,508 para 0,325, o TabPFN de 0,863 para 0,770 e a MLP de 0,841 para 0,760 (o valor de 0,841 vem de uma nova execução das cinco redes; a Tabela~\ref{tab:cv} traz 0,820, e a diferença reflete a variabilidade do treinamento). A ordem entre os modelos se mantém.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\columnwidth]{figs/fig_esquemas_cv.pdf}
+\caption{$R^2$ médio por modelo sob validação cruzada por propriedade e agrupada por lote.}
+\label{fig:cv}
+\end{figure}
+
+\subsection{Generalização entre propriedades}
+
+A Tabela~\ref{tab:lopo} traz o esquema (2). Ao testar em B, TabPFN, XGBoost e MLP ficaram abaixo do erro do preditor ingênuo (0,1155) e tiveram $R^2$ positivo (0,48, 0,29 e 0,35). Ao testar em A, nenhum modelo superou o preditor ingênuo (0,0704) e os $R^2$ foram muito negativos (de $-0{,}74$ no XGBoost a $-71$ na regressão linear).
+
+\begin{table}[t]
+\caption{Treino em uma propriedade e teste na outra. MAE em kg/dia.}
+\label{tab:lopo}
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+ & \multicolumn{2}{c}{\textbf{Teste em A}} & \multicolumn{2}{c}{\textbf{Teste em B}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+\textbf{Modelo} & $R^2$ & MAE & $R^2$ & MAE \\
+\midrule
+TabPFN & $-29{,}8$ & 0,242 & 0,48 & 0,072 \\
+MLP & $-49{,}3$ & 0,298 & 0,35 & 0,110 \\
+XGBoost & $-0{,}74$ & 0,088 & 0,29 & 0,092 \\
+Regressão linear & $-71{,}0$ & 0,350 & $-1{,}61$ & 0,249 \\
+Ingênuo & -- & 0,070 & -- & 0,116 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Interpretação}
+
+A Figura~\ref{fig:shap} mostra a importância média dos valores SHAP do TabPFN. Três variáveis concentram 90\% da importância total: peso de entrada (0,171~kg/dia), suplemento médio (0,136) e dias de permanência (0,093). A proporção do ciclo na seca (0,023) é a quarta; temperatura, PB da forragem, transporte, PB do suplemento e proporção \textit{Bos indicus} ficam abaixo de 0,01.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\columnwidth]{figs/fig_shap.pdf}
+\caption{Importância média (valor absoluto médio dos SHAP) das variáveis no TabPFN ajustado nos 245 animais.}
+\label{fig:shap}
+\end{figure}
+
+\section{Discussão}\label{sec:disc}
+
+\textbf{Dentro da distribuição.} TabPFN e MLP lideram a validação por propriedade, à frente do XGBoost e da regressão linear. A diferença entre os dois líderes em $R^2$ (0,863 contra 0,820, ou 0,841 em uma nova execução da MLP) é menor que o desvio entre dobras e que a variação entre execuções da rede, e não é conclusiva; no MAE, a diferença é maior (0,0145 contra 0,0285 kg/dia), mas com cinco dobras não há como atribuir significância estatística. A seleção de hiperparâmetros nas mesmas dobras da avaliação favorece a MLP e o XGBoost; o TabPFN, usado sem ajuste, não se beneficia disso, de modo que sua vantagem não decorre desse viés.
+
+\textbf{Validação por lote.} Os animais de um lote compartilham a janela de datas e, portanto, valores quase idênticos de temperatura e proporção de seca. Retirar lotes inteiros do treino reduziu o $R^2$ de todos os modelos, o que mostra que parte do desempenho na validação por propriedade depende de lotes semelhantes aos vistos no treino. A queda foi maior para a regressão linear ($-0{,}36$) e menor para TabPFN e MLP ($-0{,}09$ e $-0{,}08$).
+
+\textbf{Entre propriedades.} Nenhum resultado indica generalização confiável. Ao testar em A, o desempenho piora para todos os modelos e nenhum supera o preditor ingênuo. Treinar com os 71 animais de B (7 lotes e um único teor de PB do suplemento) para prever os 174 de A (59 lotes e três teores) é um problema de extrapolação: a regressão linear e o TabPFN extrapolam mal fora da faixa de treino, e o XGBoost, por ser constante fora dela, satura, o que é consistente com ele ter o menor erro nessa direção. Ao testar em B, os $R^2$ positivos de TabPFN, MLP e XGBoost sugerem alguma transferência, mas B tem apenas 7 lotes e a estimativa é instável.
+
+\textbf{Leitura do SHAP.} Peso de entrada, suplemento médio e permanência são as variáveis em que o TabPFN mais se apoia. A importância SHAP descreve o comportamento do modelo, não relações causais. A baixa importância de temperatura, PB da forragem, transporte e raça também não indica ausência de efeito: a PB da forragem tem apenas dois valores (um por propriedade) e correlaciona-se fortemente com o número de eventos de transporte ($r=-0{,}85$), o que impede separar seus efeitos neste conjunto.
+
+\textbf{Limitações.} O conjunto é pequeno (245 animais), de apenas duas propriedades e só de fêmeas. O GMD vem de duas pesagens, e os valores negativos ocorrem em ciclos de 43 dias, nos quais o erro de pesagem pesa mais. Não há dados sanitários nem genéticos. Cinco dobras geram estimativas com grande desvio e sem testes de significância. A seleção de hiperparâmetros não foi aninhada na validação, a MLP varia entre execuções, a validação por lote não é estratificada por propriedade, e o TabPFN foi usado em uma única versão.
+
+\section{Conclusão}\label{sec:concl}
+
+Comparamos regressão linear, XGBoost, uma MLP e o TabPFN na estimativa do GMD de 245 bovinos de duas propriedades. Com a validação cruzada por propriedade, TabPFN e MLP superaram os demais ($R^2$ de 0,86 e 0,82; MAE de 0,015 e 0,028~kg/dia). A validação agrupada por lote reduziu o $R^2$ de todos os modelos, mais ainda o da regressão linear, e nenhum modelo generalizou de forma confiável para a outra propriedade.
+
+Como trabalhos futuros, propõem-se: adotar validação aninhada e mais dobras; ampliar o número de propriedades, de lotes e de ciclos; incorporar variáveis sanitárias e genéticas; e explorar a incerteza das previsões, que o TabPFN permite estimar.
+
+\bibliographystyle{IEEEtran}
+\bibliography{referencias}
 
 \end{document}

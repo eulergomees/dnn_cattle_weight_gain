@@ -20,7 +20,7 @@ for ax, (sch, t) in zip(axes, [("farm", "(a) Farm-stratified"), ("cohort", "(b) 
                     medianprops=dict(color="black", lw=0.8))
     for p, m in zip(bp["boxes"], order):
         p.set(facecolor=COL[m], alpha=0.8, lw=0.5)
-    ax.set_xticklabels(order); ax.set_title(t)
+    ax.set_xticklabels(["DNN" if m == "MLP" else m for m in order]); ax.set_title(t)
 axes[0].set_ylabel("MAE per fold (kg/day)")
 fig.tight_layout(); fig.savefig("article/figs/fig_cv_en.pdf")
 

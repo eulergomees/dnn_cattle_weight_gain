@@ -60,7 +60,7 @@ FITec Labs -- Fundação para Inovações Tecnológicas, Belo Horizonte, Brazil\
 \maketitle              % typeset the header of the contribution
 %
 \begin{abstract}
-Average daily gain (ADG) is a core performance measure in beef production, but it depends on nutrition, weather and management at once, and few studies predict it from routine farm records. We compare linear regression, XGBoost, a multilayer perceptron (MLP) and the pre-trained TabPFN for predicting the ADG of 245 cattle from two farms, using nine predictors such as entry weight, days on farm, supplement intake and climate. Models were validated with 10 repetitions of 5-fold cross-validation, stratified by farm and grouped by lot, and by training on one farm and testing on the other. Differences were tested with the corrected resampled $t$ test and Holm correction. TabPFN had the lowest error in both schemes (MAE 0.015 kg/day by farm, 0.024 by lot), followed by the MLP (0.029 and 0.036), XGBoost (0.052 and 0.061) and linear regression (0.063 and 0.073). Grouping by lot raised every error, and the gap between TabPFN and the MLP was no longer significant after correction (Holm-adjusted $p=0.068$). Nested validation showed that tuning bias was small and did not change the ranking. No model transferred well from one farm to the other: only TabPFN, the MLP and XGBoost had positive $R^2$ when testing on the smaller farm, and all failed on the larger one. Entry weight, supplement intake and days on farm accounted for most of the TabPFN attributions. With few animals and no tuning, a pre-trained tabular model matched or beat a tuned neural network, but validation at the lot and farm level is needed before any model is trusted on new herds.
+Average daily gain (ADG) is a core performance measure in beef production, but it depends on nutrition, weather and management at once, and few studies predict it from routine farm records. We compare linear regression, XGBoost, a deep neural network (DNN) and the pre-trained TabPFN for predicting the ADG of 245 cattle from two farms, using nine predictors such as entry weight, days on farm, supplement intake and climate. Models were validated with 10 repetitions of 5-fold cross-validation, stratified by farm and grouped by lot, and by training on one farm and testing on the other. Differences were tested with the corrected resampled $t$ test and Holm correction. TabPFN had the lowest error in both schemes (MAE 0.015 kg/day by farm, 0.024 by lot), followed by the DNN (0.029 and 0.036), XGBoost (0.052 and 0.061) and linear regression (0.063 and 0.073). Grouping by lot raised every error, and the gap between TabPFN and the DNN was no longer significant after correction (Holm-adjusted $p=0.068$). Nested validation showed that tuning bias was small and did not change the ranking. No model transferred well from one farm to the other: only TabPFN, the DNN and XGBoost had positive $R^2$ when testing on the smaller farm, and all failed on the larger one. Entry weight, supplement intake and days on farm accounted for most of the TabPFN attributions. With few animals and no tuning, a pre-trained tabular model matched or beat a tuned neural network, but validation at the lot and farm level is needed before any model is trusted on new herds.
 
 \keywords{Average daily gain \and Beef cattle \and TabPFN \and Neural networks \and Cross-validation.}
 \end{abstract}
@@ -195,29 +195,53 @@ Farm B entered 64 of its 71 animals in 2020 and the other 7 in 2021, while farm 
 
 Eight animals, seven in B and one in A, have cycles of 43 or 44 days, all in the dry season, with a mean ADG of $-0.018$~kg/day. They include the four animals with negative ADG, whose weight changes were between $-8$ and $-3$~kg over 43 days, which is compatible with weighing error in short intervals. In A the mean ADG is 0.319~kg/day with supplement CP of 20\%, 0.352 with 25\% and 0.379 with 30\% (Fig.~\ref{fig:eda}f), and every animal in B receives 30\%.
 
-The strongest linear correlation with ADG is the dry-season share of the cycle, at $-0.61$ (Figs.~\ref{fig:corrmat} and \ref{fig:eda}e), but the eight short cycles drive it: without them it falls to $-0.40$. Entry weight and mean temperature come next, at $-0.25$ and $+0.25$ (Fig.~\ref{fig:eda}d). Days on farm and mean supplement intake have linear correlations close to zero, $+0.01$ and $+0.03$, which does not rule out nonlinear relations. Management variables take few values within each farm and are confounded with the farm itself, so a model can use them to tell the farms apart.
+The strongest linear correlation with ADG is the dry-season share of the cycle, at $-0.61$ (Figs.~\ref{fig:corrmat} and \ref{fig:eda}e), and the eight short cycles account for part of it: without them it falls to $-0.40$. Entry weight and mean temperature come next, at $-0.25$ and $+0.25$ (Fig.~\ref{fig:eda}d). Days on farm and mean supplement intake have linear correlations close to zero, $+0.01$ and $+0.03$, which does not rule out nonlinear relations. Management variables take few values within each farm and are confounded with the farm itself, so a model can use them to tell the farms apart.
 
 \subsection{Models}
 
-We compared four models. Linear regression is ordinary least squares on standardized variables. XGBoost \cite{chen2016xgboost} was tuned with a grid of 48 combinations (200 or 400 trees, depth 2, 3 or 4, learning rate 0.03 or 0.1, subsample 0.8 or 1, minimum child weight 1 or 5). The best one had 200 trees, depth 3, learning rate 0.1, subsample 0.8 and minimum child weight 1.
+We compared four models: linear regression, XGBoost, a DNN, and TabPFN. Linear regression is ordinary least squares on standardized variables. XGBoost \cite{chen2016xgboost} is a gradient-boosted tree ensemble, and we tuned its number of trees, maximum depth, learning rate, subsample, and minimum child weight by grid search.
 
-The neural network is a multilayer perceptron (MLP) with layers of 128, 64, 32 and 16 units (12,641 parameters), batch normalization \cite{ioffe2015batchnorm} and ReLU after each layer, a linear output and no dropout. We trained it with Adam \cite{kingma2015adam} (learning rate 0.01, weight decay $10^{-4}$), batches of 32 and the Huber loss \cite{huber1964robust}. Variables and target were standardized with statistics from the training set only. The learning rate was halved after 8 epochs without improvement, and training stopped early after 60 epochs without improvement on 25\% of the training set held out for that purpose, with at most 300 epochs. The architecture and hyperparameters came from a grid of 72 configurations (three architectures, dropout 0 or 0.1, three learning rates, batch normalization on or off, weight decay 0 or $10^{-4}$) and were then frozen. The reported MLP is the mean of five networks with different seeds, implemented in PyTorch \cite{pytorch2023}.
+The DNN is a multilayer perceptron with layers of 128, 64, 32 and 16 units (12,641 parameters), batch normalization \cite{ioffe2015batchnorm} and ReLU after each layer, a linear output and no dropout. We trained it with Adam \cite{kingma2015adam}, with a learning rate of 0.01, a weight decay of $10^{-4}$, batches of 32 and the Huber loss \cite{huber1964robust}. We held out 25\% of the training set to monitor the Huber loss, and variables and target were standardized with the statistics of the remaining 75\%. The learning rate was halved after 8 epochs without improvement on the held-out loss. Training stopped after 60 epochs without improvement or at 300 epochs, and we kept the weights with the lowest held-out loss. The hidden layers, dropout, learning rate, batch normalization and weight decay were chosen by grid search and then frozen. The reported DNN is the mean of five networks with different seeds, implemented in PyTorch \cite{pytorch2023}.
+
+We searched the values in Table~\ref{tab:grid}, which gives 48 combinations for XGBoost (2 $\times$ 3 $\times$ 2 $\times$ 2 $\times$ 2) and 72 for the DNN (3 $\times$ 2 $\times$ 3 $\times$ 2 $\times$ 2). Each combination was evaluated on the five farm-stratified folds of Section~\ref{sec:val}, with a single network per fold for the DNN, and we selected the one with the highest mean $R^2$ over the folds. The selected XGBoost setting has 200 trees, depth 3, learning rate 0.1, subsample 0.8, and minimum child weight 1.
+
+\begin{table}[H]
+\caption{Grid search: values searched for each hyperparameter and the configuration selected.}\label{tab:grid}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{1.8cm}>{\raggedright\arraybackslash}p{3.4cm}>{\raggedright\arraybackslash}p{3.8cm}>{\raggedright\arraybackslash}p{2.4cm}}
+\hline
+Model & Hyperparameter & Values & Selected\\
+\hline
+XGBoost & Number of trees & 200, 400 & 200\\
+ & Maximum depth & 2, 3, 4 & 3\\
+ & Learning rate & 0.03, 0.1 & 0.1\\
+ & Subsample & 0.8, 1 & 0.8\\
+ & Minimum child weight & 1, 5 & 1\\
+\hline
+DNN & Hidden layers & (64, 32); (128, 64, 32); (128, 64, 32, 16) & (128, 64, 32, 16)\\
+ & Dropout & 0, 0.1 & 0\\
+ & Learning rate & 0.003, 0.005, 0.01 & 0.01\\
+ & Batch normalization & off, on & on\\
+ & Weight decay & 0, $10^{-4}$ & $10^{-4}$\\
+\hline
+\end{tabular}
+\end{table}
 
 TabPFN is a transformer pre-trained on millions of synthetic tabular data sets \cite{hollmann2025tabpfn}. It does not update its weights on a new data set: the training animals are given as context and the test animals are predicted in a single forward pass. We used the default \texttt{TabPFNRegressor} of the \texttt{tabpfn} package (version 9.0.0, model 3.5 \cite{jager2026tabpfn35}), with unscaled variables and no tuning. Its 5\% and 95\% quantiles give a 90\% prediction interval. Linear regression and the validation routines use scikit-learn \cite{pedregosa2011sklearn}.
 
 \subsection{Validation protocol}\label{sec:val}
 
-We used three schemes, all with scaling fitted on the training set only.
+We used three schemes. Wherever variables were scaled, the scaling was fitted on the training animals only.
 
 \textit{Farm-stratified cross-validation.} Five disjoint folds, each with 49 test animals (35 from A and 14 from B in four folds, 34 and 15 in the other), so every animal is tested once.
 
-\textit{Lot-grouped cross-validation.} Five folds in which no lot is split between training and test. Lots are assigned to folds at random, from the largest to the smallest, to keep the folds near 49 animals. They are not stratified by farm.
+\textit{Lot-grouped cross-validation.} Five folds in which no lot is split between training and test. Lots are sorted from the largest to the smallest, with lots of the same size in random order, and each one goes to the fold that has the fewest animals so far. This keeps the folds near 49 animals. The folds are not stratified by farm.
 
-\textit{Train on one farm, test on the other.} We train on A and test on B, and the reverse, without refitting the hyperparameters.
+\textit{Train on one farm, test on the other.} We train on A and test on B, and the reverse, once each and without refitting the hyperparameters.
 
-The first two schemes were repeated 10 times with different random partitions, and all models use the same nine predictors and the same partitions. We report the mean absolute error (MAE, in kg/day) and the coefficient of determination $R^2$ per fold, and as a reference the naive predictor that returns the mean ADG of the training set. To compare models we used the paired differences in MAE per fold with the corrected resampled $t$ test of Nadeau and Bengio \cite{nadeau2003}, and the Holm correction \cite{holm1979} over the six pairs of models in each scheme.
+The first two schemes were repeated 10 times with different random partitions, and all models use the same nine predictors and the same partitions. We report the mean absolute error (MAE, in kg/day) and the coefficient of determination $R^2$ per fold, and the $R^2$ of the predictions pooled over the five folds of each repetition. To compare models we used the paired differences in MAE per fold with the corrected resampled $t$ test of Nadeau and Bengio \cite{nadeau2003}, and the Holm correction \cite{holm1979} over the six pairs of models in each scheme.
 
-The hyperparameters of the MLP and XGBoost were chosen on the folds of the first scheme, which favors these two models. To measure that bias, we also ran nested validation: the same grids were searched inside each training set, with three inner folds stratified by farm, and the selected configuration was evaluated on the outer fold. This was done for the first two repetitions of the farm-stratified scheme. TabPFN and linear regression are not tuned.
+The hyperparameters of the DNN and XGBoost were chosen on the folds of the first scheme, which favors these two models. To measure that bias, we also ran nested validation: the same grids were searched inside each training set, with three inner folds stratified by farm, and the selected configuration was evaluated on the outer fold. This was done for the first two repetitions of the farm-stratified scheme. TabPFN and linear regression are not tuned.
 
 \subsection{Interpretation}
 
@@ -227,7 +251,7 @@ We computed SHAP values \cite{lundberg2017shap} for TabPFN with the model-agnost
 
 \subsection{Comparison under repeated cross-validation}
 
-Table~\ref{tab:cv} and Fig.~\ref{fig:cv} give the results of the 10 repetitions of 5-fold cross-validation. With folds stratified by farm, the ranking by MAE is TabPFN (0.0149~kg/day), MLP (0.0290), XGBoost (0.0520) and linear regression (0.0634). All six paired differences are significant after the Holm correction (Table~\ref{tab:tests}). The difference between TabPFN and the MLP is 0.014~kg/day, about half the MLP error. The $R^2$ computed on the pooled out-of-fold predictions is 0.887 for TabPFN and 0.827 for the MLP, against 0.575 for XGBoost and 0.475 for linear regression.
+Table~\ref{tab:cv} and Fig.~\ref{fig:cv} give the results of the 10 repetitions of 5-fold cross-validation. With folds stratified by farm, the ranking by MAE is TabPFN (0.0149~kg/day), DNN (0.0290), XGBoost (0.0520) and linear regression (0.0634). All six paired differences are significant after the Holm correction (Table~\ref{tab:tests}). The difference between TabPFN and the DNN is 0.014~kg/day, about half the DNN error. The $R^2$ computed on the pooled out-of-fold predictions is 0.887 for TabPFN and 0.827 for the DNN, against 0.575 for XGBoost and 0.475 for linear regression.
 
 \begin{table}
 \caption{Repeated cross-validation (10 repetitions of 5 folds). MAE in kg/day: mean over folds (standard deviation over folds); $R^2$ on the pooled out-of-fold predictions.}\label{tab:cv}
@@ -238,7 +262,7 @@ Model & MAE & $R^2$ & MAE & $R^2$\\
 \hline
 Linear regression & 0.0634 (0.0076) & 0.475 & 0.0725 (0.0120) & 0.333\\
 XGBoost & 0.0520 (0.0083) & 0.575 & 0.0607 (0.0205) & 0.404\\
-MLP & 0.0290 (0.0060) & 0.827 & 0.0356 (0.0150) & 0.709\\
+DNN & 0.0290 (0.0060) & 0.827 & 0.0356 (0.0150) & 0.709\\
 TabPFN & 0.0149 (0.0051) & 0.887 & 0.0242 (0.0183) & 0.735\\
 \hline
 \end{tabular}
@@ -258,26 +282,26 @@ TabPFN & 0.0149 (0.0051) & 0.887 & 0.0242 (0.0183) & 0.735\\
 Pair & Diff. & $p$ & Diff. & $p$\\
 \hline
 Linear $-$ XGBoost & 0.011 & 0.002 & 0.012 & 0.095\\
-Linear $-$ MLP & 0.034 & $<$0.001 & 0.037 & $<$0.001\\
+Linear $-$ DNN & 0.034 & $<$0.001 & 0.037 & $<$0.001\\
 Linear $-$ TabPFN & 0.049 & $<$0.001 & 0.048 & $<$0.001\\
-XGBoost $-$ MLP & 0.023 & $<$0.001 & 0.025 & $<$0.001\\
+XGBoost $-$ DNN & 0.023 & $<$0.001 & 0.025 & $<$0.001\\
 XGBoost $-$ TabPFN & 0.037 & $<$0.001 & 0.036 & $<$0.001\\
-MLP $-$ TabPFN & 0.014 & $<$0.001 & 0.011 & 0.068\\
+DNN $-$ TabPFN & 0.014 & $<$0.001 & 0.011 & 0.068\\
 \hline
 \end{tabular}
 \end{table}
 
-Grouping the folds by lot raises the error of every model, and by different amounts. Linear regression goes from 0.0634 to 0.0725 and its fold-level $R^2$ falls from 0.424 to 0.059. XGBoost goes from 0.0520 to 0.0607. The MLP and TabPFN lose less in $R^2$ (0.827 to 0.709 and 0.887 to 0.735), but their errors rise by 23\% and 62\%. Animals of the same lot share dates, and so the mean temperature and the dry-season share work almost as lot identifiers when lots are split between training and test. A model may use them to recognize the lot instead of learning how climate affects gain. The lot-grouped scheme removes this shortcut, and its results are the more realistic estimate for a new lot on a known farm. Under it the MLP and TabPFN are still well ahead of XGBoost and linear regression, but the 0.011~kg/day gap between them is no longer significant (adjusted $p=0.068$), and XGBoost and linear regression cannot be separated either ($p=0.095$). The fold-level standard deviation of TabPFN also grows from 0.0051 to 0.0183, so its advantage depends on which lots end up in the test fold.
+Grouping the folds by lot raises the error of every model, and by different amounts. Linear regression goes from 0.0634 to 0.0725 and its fold-level $R^2$ falls from 0.424 to 0.059. XGBoost goes from 0.0520 to 0.0607. The DNN and TabPFN lose less in $R^2$ (0.827 to 0.709 and 0.887 to 0.735), but their errors rise by 23\% and 62\%. Animals of the same lot share dates, and so the mean temperature and the dry-season share work almost as lot identifiers when lots are split between training and test. A model may use them to recognize the lot instead of learning how climate affects gain. The lot-grouped scheme removes this shortcut, and its results are the more realistic estimate for a new lot on a known farm. Under it the DNN and TabPFN are still well ahead of XGBoost and linear regression, but the 0.011~kg/day gap between them is no longer significant (adjusted $p=0.068$), and XGBoost and linear regression cannot be separated either ($p=0.095$). The fold-level standard deviation of TabPFN also grows from 0.0051 to 0.0183, so its advantage depends on which lots end up in the test fold.
 
 The 90\% prediction intervals of TabPFN covered 96.8\% of the test animals under the farm-stratified scheme (mean width 0.065~kg/day) and 95.1\% under the lot-grouped one (0.104). They are conservative, wider than needed for the nominal level, and widen when lots are held out. These coverages describe cross-validation only, not new farms.
 
 \subsection{Selection bias}
 
-The grids of the MLP and XGBoost were searched on the same folds used for evaluation. In the nested validation, the MAE of the MLP rose from 0.0291 to 0.0314~kg/day and its $R^2$ fell from 0.804 to 0.775. For XGBoost the MAE rose from 0.0527 to 0.0575 and $R^2$ from 0.509 to 0.451. The bias is small compared with the gap to TabPFN, which has no tuned hyperparameters, and the ranking does not change. The MLP selected the same configuration (no dropout, learning rate 0.01, batch normalization, weight decay $10^{-4}$) in 8 of 10 outer folds, and only its architecture varied. XGBoost chose 8 different configurations in 10 folds. We kept the frozen configuration as the main result.
+The grids of the DNN and XGBoost were searched on the same folds used for evaluation. In the nested validation, the MAE of the DNN rose from 0.0291 to 0.0314~kg/day and its $R^2$ fell from 0.804 to 0.775. For XGBoost the MAE rose from 0.0527 to 0.0575 and $R^2$ from 0.509 to 0.451. The bias is small compared with the gap to TabPFN, which has no tuned hyperparameters, and the ranking does not change. The DNN selected the same configuration (no dropout, learning rate 0.01, batch normalization, weight decay $10^{-4}$) in 8 of 10 outer folds, and only its architecture varied. XGBoost chose 8 different configurations in 10 folds. We kept the frozen configuration as the main result.
 
 \subsection{Transfer between farms}
 
-When we train on one farm and test on the other, the picture changes (Table~\ref{tab:lopo}). Testing on B, TabPFN reaches $R^2=0.48$, the MLP 0.35 and XGBoost 0.29, while linear regression gives $-1.61$. Testing on A, every model is worse than predicting the training mean ($R^2$ from $-0.74$ for XGBoost to $-71.0$ for linear regression), and the MLP and TabPFN degrade the most ($-49.3$ and $-29.8$). XGBoost is the most stable in this scheme. A is larger (174 animals), has cycles up to 1253 days and several supplement levels, while B has 71 animals with cycles of at most 383 days. A model trained on B never sees most of the range it is asked to predict, and flexible models probably extrapolate from it badly. Two farms cannot tell farm effects from the limits of the training range, and this scheme was run only once, without repetitions or intervals.
+When we train on one farm and test on the other, the picture changes (Table~\ref{tab:lopo}). Testing on B, TabPFN reaches $R^2=0.48$, the DNN 0.35 and XGBoost 0.29, while linear regression gives $-1.61$. Testing on A, every model is worse than predicting the training mean ($R^2$ from $-0.74$ for XGBoost to $-71.0$ for linear regression), and the DNN and TabPFN degrade the most ($-49.3$ and $-29.8$). XGBoost is the most stable in this scheme. A is larger (174 animals), has cycles up to 1253 days and several supplement levels, while B has 71 animals with cycles of at most 383 days. A model trained on B never sees most of the range it is asked to predict, and flexible models probably extrapolate from it badly. Two farms cannot tell farm effects from the limits of the training range, and this scheme was run only once, without repetitions or intervals.
 
 \begin{table}
 \caption{$R^2$ when training on one farm and testing on the other (single run).}\label{tab:lopo}
@@ -287,7 +311,7 @@ Model & Test on B & Test on A\\
 \hline
 Linear regression & $-1.61$ & $-71.0$\\
 XGBoost & 0.29 & $-0.74$\\
-MLP & 0.35 & $-49.3$\\
+DNN & 0.35 & $-49.3$\\
 TabPFN & 0.48 & $-29.8$\\
 \hline
 \end{tabular}
@@ -309,7 +333,7 @@ The data set has 245 females from two farms in one region, so the results do not
 
 \section{Conclusion}
 
-Under repeated cross-validation, TabPFN predicted the ADG of the 245 cattle with the lowest error, followed by a tuned MLP, XGBoost and linear regression, and nested validation showed that tuning bias does not explain the ranking. When lots are held out the error of every model rises and the difference between TabPFN and the MLP is no longer significant. Models trained on one farm did not predict the other farm reliably. For practical use, a model should be validated by lot and by farm before it supports decisions, and more farms are the next step to test whether the ranking holds.
+Under repeated cross-validation, TabPFN predicted the ADG of the 245 cattle with the lowest error, followed by a tuned DNN, XGBoost and linear regression, and nested validation showed that tuning bias does not explain the ranking. When lots are held out the error of every model rises and the difference between TabPFN and the DNN is no longer significant. Models trained on one farm did not predict the other farm reliably. For practical use, a model should be validated by lot and by farm before it supports decisions, and more farms are the next step to test whether the ranking holds.
 
 \begin{credits}
 \subsubsection{\ackname} [Acknowledgments and funding statement: to be completed.]

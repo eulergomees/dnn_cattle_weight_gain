@@ -1,0 +1,13 @@
+scheme,model_a,model_b,mean_diff_MAE,se,t,p,p_holm
+cohort,Linear,MLP,0.0369,0.00562,6.56778,0.0,0.0
+cohort,Linear,TabPFN,0.04827,0.00646,7.47551,0.0,0.0
+cohort,Linear,XGBoost,0.0118,0.00692,1.70489,0.09455,0.09455
+cohort,MLP,TabPFN,0.01137,0.00522,2.17865,0.0342,0.06839
+cohort,MLP,XGBoost,-0.0251,0.00575,-4.36195,7e-05,0.0002
+cohort,TabPFN,XGBoost,-0.03647,0.00438,-8.33537,0.0,0.0
+farm,Linear,MLP,0.03441,0.0031,11.08428,0.0,0.0
+farm,Linear,TabPFN,0.04854,0.00344,14.112,0.0,0.0
+farm,Linear,XGBoost,0.0114,0.00345,3.30188,0.0018,0.0018
+farm,MLP,TabPFN,0.01414,0.00193,7.34189,0.0,0.0
+farm,MLP,XGBoost,-0.023,0.00248,-9.29371,0.0,0.0
+farm,TabPFN,XGBoost,-0.03714,0.00321,-11.57269,0.0,0.0

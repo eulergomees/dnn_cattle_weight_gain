@@ -42,7 +42,7 @@ ax = axes[0, 2]
 bins = np.linspace(0, 1260, 22)
 for f in ["A", "B"]:
     ax.hist(df.loc[df.farm == f, "dias_permanencia"], bins=bins, alpha=0.75, color=COL[f])
-ax.set_xlabel("Days on farm"); ax.set_ylabel("Animals"); ax.set_title("(c) Stay")
+ax.set_xlabel("Days on farm"); ax.set_ylabel("Animals"); ax.set_title("(c) Days on farm")
 
 ax = axes[1, 0]
 for f in ["A", "B"]:
@@ -95,7 +95,7 @@ mat_cols = {"peso_entrada_kg": "Entry weight", "dias_permanencia": "Days on farm
             "gmd_kg_dia": "ADG"}
 C = df[list(mat_cols)].corr()
 lab = list(mat_cols.values())
-fig, ax = plt.subplots(figsize=(4.8, 4.0))
+fig, ax = plt.subplots(figsize=(4.0, 3.5))
 im = ax.imshow(C.values, cmap="RdBu_r", vmin=-1, vmax=1)
 ax.set_xticks(range(len(lab))); ax.set_xticklabels(lab, rotation=45, ha="right")
 ax.set_yticks(range(len(lab))); ax.set_yticklabels(lab)
@@ -104,7 +104,7 @@ for i in range(len(lab)):
         v = C.values[i, j]
         if abs(v) < 0.3:
             continue
-        ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=5.5,
+        ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=6.5,
                 color="white" if abs(v) > 0.6 else "black")
 for s_ in ax.spines.values():
     s_.set_visible(False)

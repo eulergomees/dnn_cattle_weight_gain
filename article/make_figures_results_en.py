@@ -13,8 +13,8 @@ COL = {"Linear": "#999999", "XGBoost": "#E69F00", "MLP": "#009E73", "TabPFN": "#
 order = ["Linear", "XGBoost", "MLP", "TabPFN"]
 
 f = pd.read_csv("results/repeated_cv_folds.csv")
-fig, axes = plt.subplots(1, 2, figsize=(4.8, 2.2), sharey=True)
-for ax, (sch, t) in zip(axes, [("farm", "(a) Farm-stratified"), ("cohort", "(b) Lot-grouped")]):
+fig, axes = plt.subplots(1, 2, figsize=(4.4, 2.3), sharey=True)
+for ax, (sch, t) in zip(axes, [("farm", "(a) FS-CV"), ("cohort", "(b) LG-CV")]):
     data = [f[(f.scheme == sch) & (f.model == m)].MAE.values for m in order]
     bp = ax.boxplot(data, patch_artist=True, widths=0.6, showfliers=False,
                     medianprops=dict(color="black", lw=0.8))

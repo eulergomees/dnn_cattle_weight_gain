@@ -35,7 +35,7 @@
 \maketitle
 
 \begin{abstract}
-Average daily gain (ADG) sets the weight that beef cattle gain in a cycle and is associated with farm income. We compared linear regression, XGBoost, a deep neural network (DNN) and TabPFN for predicting the ADG of 245 cattle from two farms, using repeated cross-validation stratified by farm and grouped by lot, and training on one farm and testing on the other. TabPFN had the lowest mean absolute error (0.015 kg/day by farm, 0.024 by lot), followed by the DNN, XGBoost and linear regression. By lot, the TabPFN and DNN difference was no longer significant, and no model transferred well between farms.
+Average daily gain (ADG) is the rate at which beef cattle gain weight and is associated with farm income. We compared linear regression, XGBoost, a deep neural network (DNN) and TabPFN for predicting the ADG of 245 cattle from two farms, using repeated cross-validation stratified by farm and grouped by lot, and training on one farm and testing on the other. TabPFN had the lowest mean absolute error (0.015 kg/day by farm, 0.024 by lot), followed by the DNN, XGBoost and linear regression. By lot, the difference between TabPFN and the DNN was no longer significant, and no model transferred well between farms.
 \end{abstract}
 
 \section{Introduction}
@@ -48,9 +48,9 @@ ADG depends on many factors at once. In an on-farm survey of 583 batches (38,707
 
 Machine learning is widely used in agriculture. A review of papers from 2018 to 2020 found applications in crop, water, soil and livestock management, with cattle and sheep among the most studied animals and neural networks performing best among the algorithms used \cite{benos2021}.
 
-A systematic review of 53 studies from 2004 to 2024 on estimating cattle weight gain found linear regression to be the most used model, ahead of neural networks and support vector machines (nine studies each), with a shift toward more advanced models \cite{hossain2025review}. For beef cattle weight and gain, Tuyishime and Adewusi compared linear regression, a decision tree, XGBoost and support vector regression to predict weight at 36 months. The decision tree did best, earlier weights were the strongest predictors, and temperature and season had moderate effects \cite{tuyishime2025}. Grzesiak et al. classified the pre-weaning daily gain of beef calves as above or below the breed mean, and a Random Forest performed best \cite{grzesiak2023}.
+A systematic review of 53 studies from 2004 to 2024 on estimating cattle weight gain found linear regression to be the most used model, ahead of neural networks and support vector machines (nine studies each), with a shift toward more advanced models \cite{hossain2025review}. For beef cattle weight and gain, one study compared linear regression, a decision tree, XGBoost and support vector regression to predict weight at 36 months. The decision tree did best, earlier weights were the strongest predictors, and temperature and season had moderate effects \cite{tuyishime2025}. Another study classified the pre-weaning daily gain of beef calves as above or below the breed mean, and a Random Forest performed best \cite{grzesiak2023}.
 
-Closer to our problem, Hossain et al. forecast the one-month weight gain of a mob of Angus steers on an Australian university farm. They used a Random Forest on the previous month's weight, age and weather, with weights recorded by an automatic platform and 10-fold cross-validation \cite{hossain2025mob}. The other studies above predict weight at a fixed age or a gain class for calves. Two studies in the review do predict ADG, but from images \cite{cominotte2020} or from continuously recorded partial body weights \cite{macneil2021}. Several of these approaches depend on images, genotypes or sensing equipment that many commercial farms do not have. Among all of them, none predicts the continuous ADG of a full production cycle from routine farm records such as entry weight, days on farm, supplementation and climate.
+Closer to our problem, one study forecast the one-month weight gain of a mob of Angus steers on an Australian university farm. It used a Random Forest on the previous month's weight, age and weather, with weights recorded by an automatic platform and 10-fold cross-validation \cite{hossain2025mob}. The other studies above predict weight at a fixed age or a gain class for calves. Two studies in the review do predict ADG, but from images \cite{cominotte2020} or from continuously recorded partial body weights \cite{macneil2021}. Several of these approaches depend on images, genotypes or sensing equipment that many commercial farms do not have. Among all of them, none predicts the continuous ADG of a full production cycle from routine farm records such as entry weight, days on farm, supplementation and climate.
 
 The review found only holdout, k-fold and leave-one-out validation in this literature \cite{hossain2025review}. A model meant for new lots or new farms should be tested on new lots and farms, since animals in the same lot share dates, climate and management. This paper compares linear regression, XGBoost, a deep neural network (DNN) and TabPFN for predicting the ADG of 245 cattle from two farms, and tests how well they hold up on new lots and new farms.
 
@@ -65,29 +65,29 @@ The main contributions of this work are:
 
 \subsection{Data}
 
-The dataset contains 245 animals, all females, from two farms in a region of Minas Gerais, Brazil: farm A with 174 animals and farm B with 71. The authors collected the data with the farm owners, from their records, and did not handle any animals. The records come from routine weighings, with entries from February 2020 and exits until May 2025. On farm A, the weighings and management data were recorded on paper field sheets and later transcribed. On farm B, the weighings were obtained from a spreadsheet maintained by the farm. Each animal corresponds to a line, from its entry weighing to its exit weighing. We checked each transcribed line to ensure that no animal appears twice, the weight gain is equal to the exit weight minus the entry weight, and the daily gain is equal to the gain divided by the days between weighings.
+The dataset contains 245 animals, all females, from two farms in a region of Minas Gerais, Brazil: farm A with 174 animals and farm B with 71. The authors collected the data with the farm owners, from their records, and did not handle any animals. The records come from routine weighings, with entries from February 2020 and exits until May 2025. On farm A, the weighings and management data were recorded on paper field sheets and later transcribed. On farm B, the weighings were obtained from a spreadsheet maintained by the farm. Each animal corresponds to a row, from its entry weighing to its exit weighing. We checked each transcribed record to ensure that no animal appears twice, the weight gain is equal to the exit weight minus the entry weight, and the daily gain is equal to the gain divided by the days between weighings.
 
-The weights and dates come from the weighings, and the mean supplement intake from the farm records. The share of \textit{Bos indicus} comes from the breed of each animal. The crude protein (CP) of the supplement and of the forage was taken from the CQBAL food composition tables \cite{cqbal2023}, using the product name recorded on the farm. The climate variables come from NASA POWER \cite{nasapower2026}, at the coordinates of each farm and over the days from entry to exit. We computed the days on farm, the ADG and the climate summaries by script from the recorded dates and weights.
+The weights and dates come from the weighings, and the mean supplement intake from the farm records. The share of \textit{Bos indicus} comes from the breed of each animal. The crude protein (CP) of the supplement and of the forage was taken from the CQBAL feed composition tables \cite{cqbal2023}, using the product name recorded on the farm. The climate variables come from NASA POWER \cite{nasapower2026}, at the coordinates of each farm and over the days from entry to exit. We computed the days on farm, the ADG and the climate summaries by script from the recorded dates and weights.
 The ADG of each animal is
 \begin{equation}
 \mathrm{ADG} = \frac{W_{\mathrm{exit}} - W_{\mathrm{entry}}}{D}\ \ [\mathrm{kg/day}],
 \end{equation}
 where $W_{\mathrm{exit}}$ and $W_{\mathrm{entry}}$ are the exit and entry weights in kg and $D$ is the number of days on farm.
 
-Each animal has 19 variables: the animal and farm identifiers, the entry and exit dates, the entry and exit weights, the days on farm, the ADG, sex, the share of \textit{Bos indicus}, the mean supplement intake, the supplement CP, the supplementation frequency, the forage CP, the paddock rotation, the number of transport events, the mean temperature, the accumulated precipitation and the share of the cycle in the dry season. A transport event is a transport of the animal between farms, and the paddock rotation records whether the animals move through more than one paddock, so that a single pasture is not worn down.
+Each animal has 19 variables: the animal and farm identifiers, the entry and exit dates, the entry and exit weights, the days on farm, the ADG, sex, the share of \textit{Bos indicus}, the mean supplement intake, the supplement CP, the supplementation frequency, the forage CP, the paddock rotation, the number of transport events, the mean temperature, the accumulated precipitation and the share of the cycle in the dry season. A transport event is a movement of the animal from one property to another, either the transport of a purchased animal to the farm where it was weighed or a movement between external farms, that is, farms other than A and B. The paddock rotation records whether the animals move through more than one paddock, so that a single pasture is not worn down.
 
-Ten of them are not predictors. The ADG is the target. The identifiers and dates identify the animal, the farm and the lot, and would let a model recognize them instead of learning from the animal, so we removed them. We also removed the exit weight, because it defines the target, and sex, supplementation frequency and paddock rotation, which have the same value for every animal and cannot explain differences between them.
+Ten of them are not predictors. The ADG is the target. The identifiers and dates identify the animal, the farm and the lot, and would let a model recognize them instead of learning from the animal, so we removed them. We also removed the exit weight, because it defines the target, sex, supplementation frequency and paddock rotation, which have the same value for every animal and cannot explain differences between them, and the accumulated precipitation, for the reason given below.
 
 To check multicollinearity among the remaining variables, we computed Pearson correlations \cite{pearson1895} (Fig.~\ref{fig:corrmat}). The accumulated precipitation grows with the length of the cycle and has a correlation of 0.96 with the days on farm, so it is largely redundant and we removed it. Among the nine remaining variables, the highest correlation is $-0.85$, between forage CP and transport events. The mean temperature and the dry-season share ($-0.59$) and the forage CP and the \textit{Bos indicus} share ($-0.59$) follow, and all other pairs are at most 0.5 in absolute value. We kept these pairs because each variable describes a different aspect of the management or the environment, and the correlations come from the farms differing in all of them.
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.62\textwidth]{figs/fig_corrmat_en.pdf}
+\includegraphics[width=0.58\textwidth]{figs/fig_corrmat_en.pdf}
 \caption{Pearson correlations among the nine predictors, the accumulated precipitation (*, left out of the models) and ADG. Values with absolute value below 0.3 are not printed.}\label{fig:corrmat}
 \end{figure}
 
 The remaining nine predictors are listed in Table~\ref{tab:vars} with the reason for using each one.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \caption{Predictors.}\label{tab:vars}
 \small
 \begin{tabular}{>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}p{5.2cm}>{\raggedright\arraybackslash}p{4.6cm}}
@@ -100,9 +100,9 @@ Days on farm & Days between entry and exit & Length of the period over which the
 Mean supplement intake & Supplement intake per day, averaged over the cycle (kg/day) & Supplementation changes the gain on pasture \cite{tambara2021}\\
 Supplement CP & Crude protein of the supplement (20, 25 or 30\%) & Protein supply of the supplement\\
 Forage CP & Crude protein of the forage (10.42\% in A, 10.00\% in B) & Quality of the pasture\\
-Transport events & Number of transports between farms (1 to 3) & Transport stress\\
+Transport events & Number of transports, by purchase or between external farms (1 to 3) & Transport stress\\
 Mean temperature & Mean air temperature between entry and exit (\textdegree C) & Weather affects ADG \cite{ndsuweather}\\
-Dry-season share & Share of the cycle between April and September & Season affects ADG \cite{tambara2021,veneto}\\
+Dry-season share & Share of the cycle between April and September & Season affects ADG \cite{veneto,tambara2021}\\
 \hline
 \end{tabular}
 \end{table}
@@ -127,7 +127,7 @@ Total ($n=245$) & 0.350 & 0.117 & 177 & 46 & 301 & 55 & 354 & 186\\
 \end{tabular}
 \end{table}
 
-Farm A has the higher and more homogeneous ADG, and all four animals that lost weight are in B. Entry weight is similar in the two farms, but animals in A leave heavier, at 315 against 267~kg, and stay longer, with a mean of 390 days against 265 in B.
+Farm A has the higher and more homogeneous ADG, and all four animals that lost weight are in B. Entry weight is similar on the two farms, but animals in A leave heavier, at 315 against 267~kg, and stay longer, with a mean of 390 days against 265 in B.
 
 Animals in the same lot share dates, climate and management, so we also group them by lot when validating the models (Section~\ref{sec:val}). A lot is the set of animals with the same farm, entry date and exit date. There are 66 lots, 59 in A and 7 in B. Of these, 29 have a single animal, and the largest has 19.
 
@@ -135,9 +135,9 @@ Animals in the same lot share dates, climate and management, so we also group th
 
 Farm B entered 64 of its 71 animals in 2020 and the other 7 in 2021, while farm A entered between 11 and 46 animals per year from 2020 to 2025 (Fig.~\ref{fig:eda}a). ADG is skewed to the left, with a skewness of $-0.89$ (Fig.~\ref{fig:eda}b), and days on farm are longer in A (Fig.~\ref{fig:eda}c).
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.7\textwidth]{figs/fig_eda_en.pdf}
+\includegraphics[width=0.64\textwidth]{figs/fig_eda_en.pdf}
 \caption{Overview of the 245 animals by farm (A in blue, B in orange): (a) entries per year; (b) distribution of ADG; (c) days on farm; (d) ADG against entry weight; (e) ADG against the dry-season share of the cycle; (f) ADG by supplement CP.}\label{fig:eda}
 \end{figure}
 
@@ -147,11 +147,11 @@ The strongest linear correlation with ADG is the dry-season share of the cycle, 
 
 \subsection{Models}
 
-We compared four models: linear regression, XGBoost, a DNN and TabPFN. Linear regression is ordinary least squares on standardized variables. XGBoost \cite{chen2016xgboost} is a gradient-boosted tree ensemble, and we tuned its number of trees, maximum depth, learning rate, subsample and minimum child weight by grid search.
+We compared four models: linear regression, XGBoost, a DNN and TabPFN. Linear regression is ordinary least squares on standardized variables.
 
-The DNN is a multilayer perceptron with layers of 128, 64, 32 and 16 units (12,641 parameters), batch normalization \cite{ioffe2015batchnorm} and ReLU after each layer, a linear output and no dropout. We trained it with Adam \cite{kingma2015adam}, with a learning rate of 0.01, a weight decay of $10^{-4}$, batches of 32 and the Huber loss \cite{huber1964robust}. We held out 25\% of the training set to monitor the Huber loss, and variables and target were standardized with the statistics of the remaining 75\%. The learning rate was halved after 8 epochs without improvement on the held-out loss. Training stopped after 60 epochs without improvement or at 300 epochs, and we kept the weights with the lowest held-out loss. The hidden layers, dropout, learning rate, batch normalization and weight decay were chosen by grid search and then frozen. The reported DNN is the mean of five networks with different seeds, implemented in PyTorch. We used no data augmentation.
+XGBoost \cite{chen2016xgboost} is a gradient-boosted tree ensemble. We searched 200 or 400 trees, depth 2, 3 or 4, learning rate 0.03 or 0.1, subsample 0.8 or 1 and minimum child weight 1 or 5, which gives 48 combinations. Each combination was evaluated on the five FS-CV folds of Section~\ref{sec:val}, and we kept the one with the highest mean coefficient of determination ($R^2$) over the folds. The selected setting has 200 trees, depth 3, learning rate 0.1, subsample 0.8 and minimum child weight 1.
 
-XGBoost was searched over 200 or 400 trees, depth 2, 3 or 4, learning rate 0.03 or 0.1, subsample 0.8 or 1 and minimum child weight 1 or 5, which gives 48 combinations. The DNN was searched over three architectures, (64, 32), (128, 64, 32) and (128, 64, 32, 16), dropout 0 or 0.1, learning rate 0.003, 0.005 or 0.01, batch normalization on or off and weight decay 0 or $10^{-4}$, which gives 72 combinations. Each combination was evaluated on the five FS-CV folds of Section~\ref{sec:val}, with a single network per fold for the DNN, and we kept the one with the highest mean coefficient of determination ($R^2$) over the folds. The selected XGBoost setting has 200 trees, depth 3, learning rate 0.1, subsample 0.8 and minimum child weight 1.
+The DNN is a multilayer perceptron with layers of 128, 64, 32 and 16 units (12,641 parameters), batch normalization \cite{ioffe2015batchnorm} and ReLU after each layer, a linear output and no dropout. We trained it with Adam \cite{kingma2015adam}, with a learning rate of 0.01, a weight decay of $10^{-4}$, batches of 32 and the Huber loss \cite{huber1964robust}. We held out 25\% of the training set to monitor the Huber loss, and variables and target were standardized with the statistics of the remaining 75\%. The learning rate was halved after 8 epochs without improvement on the held-out loss. Training stopped after 60 epochs without improvement or at 300 epochs, and we kept the weights with the lowest held-out loss. This configuration was chosen by a grid search over three architectures, (64, 32), (128, 64, 32) and (128, 64, 32, 16), dropout 0 or 0.1, learning rate 0.003, 0.005 or 0.01, batch normalization on or off and weight decay 0 or $10^{-4}$, which gives 72 combinations. Each combination was evaluated on the same five FS-CV folds, with a single network per fold, and the one with the highest mean $R^2$ was kept and then frozen. The reported DNN is the mean of five networks with different seeds, implemented in PyTorch \cite{pytorch2026}. We used no data augmentation.
 
 TabPFN is a transformer pre-trained on millions of synthetic tabular datasets \cite{hollmann2025tabpfn}. It does not update its weights on a new dataset; instead, the training animals are provided as context, and the test animals are predicted in a single forward pass. We used the standard \texttt{TabPFNRegressor} from the \texttt{tabpfn} package (version 9.0.0, model 3.5 \cite{jager2026tabpfn35}), with unscaled variables and no tuning. Its 5\% and 95\% quantiles provide a 90\% prediction interval.
 
@@ -161,7 +161,7 @@ To interpret the model, we calculated SHAP values \cite{lundberg2017shap} for Ta
 
 We used three validation schemes: farm-stratified cross-validation (FS-CV), lot-grouped cross-validation (LG-CV) and leave-one-farm-out (LOFO) validation. Whenever variables were scaled, the scaling was fitted only on the training animals. FS-CV divides the animals into five disjoint folds with 49 test animals each, 35 from farm A and 14 from farm B in four folds and 34 and 15 in the other, so that each animal is tested once. LG-CV also uses five folds, but never divides a lot between training and testing. The lots are ranked from largest to smallest, with lots of the same size in random order, and each goes to the fold that has the fewest animals so far. This keeps the folds close to 49 animals, and the folds are not stratified by farm. LOFO trains on A and tests on B, and vice versa, once each and without refitting the hyperparameters.
 
-FS-CV and LG-CV were repeated 10 times with different random partitions, and all models use the same nine predictors and the same partitions. We report the mean absolute error (MAE, in kg/day) and the $R^2$ per fold, and the $R^2$ of the predictions pooled over the five folds of each repetition. To compare models we used the paired differences in MAE per fold with the corrected resampled $t$ test of Nadeau and Bengio \cite{nadeau2003}, and the Holm correction \cite{holm1979} over the six pairs of models in each scheme.
+FS-CV and LG-CV were repeated 10 times with different random partitions, and all models use the same nine predictors and the same partitions. We report the mean absolute error (MAE, in kg/day) and the $R^2$ per fold, and the $R^2$ of the predictions pooled over the five folds of each repetition. To compare models we used the paired differences in MAE per fold with the corrected resampled $t$ test \cite{nadeau2003}, and the Holm correction \cite{holm1979} over the six pairs of models in each scheme.
 
 The hyperparameters of the DNN and XGBoost were chosen on the folds of FS-CV, which favors these two models. To measure that bias, we also ran nested validation: the same grids were searched inside each training set, with three inner folds stratified by farm, and the selected configuration was evaluated on the outer fold. This was done for the first two repetitions of FS-CV. TabPFN and linear regression were not tuned.
 
@@ -190,13 +190,13 @@ Under LG-CV the error of every model rises: the MAE increases by 14\% for linear
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.58\textwidth]{figs/fig_cv_en.pdf}
+\includegraphics[width=0.54\textwidth]{figs/fig_cv_en.pdf}
 \caption{MAE per fold over 10 repetitions of 5-fold cross-validation: (a) FS-CV; (b) LG-CV.}\label{fig:cv}
 \end{figure}
 
 The 90\% prediction intervals of TabPFN covered 96.8\% of the test animals under FS-CV (mean width 0.065~kg/day) and 95.1\% under LG-CV (0.104), so they are conservative.
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \caption{Paired comparisons of MAE (mean difference in kg/day, first model minus second; Holm-adjusted $p$ values).}\label{tab:tests}
 \begin{tabular}{p{4.0cm}p{1.8cm}p{1.8cm}p{1.8cm}p{1.8cm}}
 \hline
@@ -223,9 +223,9 @@ In LOFO, which trains on one farm and tests on the other, the results depend on 
 
 Entry weight (mean $|$SHAP$|$ 0.171~kg/day), mean supplement intake (0.136) and days on farm (0.093) account for most of the attributions of TabPFN (Fig.~\ref{fig:shap}). The dry-season share follows with 0.023, and the other five variables stay below 0.01. The two variables correlated at $-0.85$, forage CP and transport events, have low importance (0.006 and 0.004), so their collinearity does not change this reading. Forage CP takes only two values, one per farm, and cannot be told apart from the farm itself. The SHAP values were computed on a model fitted to all animals and carry no causal interpretation.
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.5\textwidth]{figs/fig_shap_en.pdf}
+\includegraphics[width=0.46\textwidth]{figs/fig_shap_en.pdf}
 \caption{Mean absolute SHAP value of each variable for TabPFN fitted to all 245 animals.}\label{fig:shap}
 \end{figure}
 
@@ -237,7 +237,7 @@ The dataset has 245 females from two farms in one region, so the results do not 
 
 Predicting the ADG from records the farm already keeps gives the exit weight at a given date, which is the entry weight plus the ADG times the days on farm, and the ADG is associated with income. In a study of Brazilian beef farms, each additional kg/day of ADG was associated with US\$~698 more economic result per hectare per year, and the ADG explained about half of the variation in that result \cite{semchechem2021}. Taking this coefficient only as an order of magnitude, a difference of 0.1~kg/day between two lots corresponds to about US\$~70 per hectare per year, while the error of TabPFN, 0.015 to 0.024~kg/day, corresponds to about US\$~10 to 17. At the mean stay of 354 days, the same error is about 5~kg of exit weight under FS-CV and 9~kg under LG-CV. With this estimate before the end of the cycle, a producer could see which lots are falling behind, adjust the supplementation and choose the date of sale. We did not measure these economic effects, and the coefficient comes from other farms.
 
-We compared four models for predicting the ADG of 245 cattle from two farms. TabPFN had the lowest error under farm-stratified cross-validation, followed by the DNN, XGBoost and linear regression, and nested validation showed that tuning on the evaluation folds does not explain this ranking. When whole lots were held out the error of every model rose, and the difference between TabPFN and the DNN was no longer significant. No model predicted the other farm reliably, and most of the TabPFN attributions came from the entry weight, the supplement intake and the days on farm. A model should therefore be validated by lot and by farm before it supports decisions, and more farms are the next step to test whether the ranking holds.
+We compared four models for predicting the ADG of 245 cattle from two farms. TabPFN had the lowest error under farm-stratified cross-validation, followed by the DNN, XGBoost and linear regression, and nested validation showed that tuning on the evaluation folds does not explain this ranking. When whole lots were held out the error of every model rose, and the difference between TabPFN and the DNN was no longer significant. No model predicted the other farm reliably, and most of the TabPFN attributions came from the entry weight, the supplement intake and the days on farm. A model should therefore be validated by lot and by farm before it supports decisions, and future work should include more farms to test whether the ranking holds.
 
 
 \bibliographystyle{sbc}

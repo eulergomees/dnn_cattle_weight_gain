@@ -109,4 +109,4 @@ for i in range(len(lab)):
 for s_ in ax.spines.values():
     s_.set_visible(False)
 fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02, label="Pearson correlation")
-fig.tight_layout(); fig.savefig(f"{OUT}/fig_corrmat_en.pdf"); plt.close(fig)
+fig.tight_layout(); fig.savefig(f"{OUT}/fig_corrmat_en.pdf", bbox_inches="tight", pad_inches=0.05); plt.close(fig)

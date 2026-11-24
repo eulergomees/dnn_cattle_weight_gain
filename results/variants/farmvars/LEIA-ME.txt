@@ -1,0 +1,4 @@
+Variante "farmvars": 8 preditores (inclui media_proteina_bruta_forragem_pct e numero_eventos_transporte,
+que sao quase um identificador de fazenda), SEM media_suplemento_kg_dia (vazamento do alvo).
+Configuracoes escolhidas por grid_search.py nesse conjunto: XGBoost 400/2/0.03/0.8/5;
+DNN (128,64,32), dropout 0.1, lr 5e-3, sem BN, wd 1e-4. Gerado em 2026-11-24.

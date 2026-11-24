@@ -20,9 +20,11 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 DATA_PATH = "data/dataset_por_animal_modelo_v3.csv"
 TARGET = "gmd_kg_dia"
 GROUP = "id_propriedade"
-# fora dos preditores: identificação, vazamento do alvo e multicolinear (r=0.97 c/ dias)
+# fora dos preditores: identificação, vazamento do alvo e multicolinear (r=0.97 c/ dias).
+# media_suplemento_kg_dia: NUNCA foi medido; era 0,3% de (peso_entrada+peso_saida)/2 (ou 0,100 fixo
+# p/ sal mineral), ou seja, embute o peso de saída -> vazamento do alvo (descoberto em 2026-11-24).
 DROP = ["id_animal", "id_propriedade", "data_entrada", "data_saida",
-        "peso_saida_kg", "precipitacao_acumulada_mm"]
+        "peso_saida_kg", "precipitacao_acumulada_mm", "media_suplemento_kg_dia"]
 SEED = 42
 N_TEST = 49          # amostras de teste por fold (fixo), distribuídas pela % de cada fazenda
 N_SPLITS = 5         # folds disjuntos de 49 = 245 -> todo animal é testado exatamente 1x
@@ -48,10 +50,33 @@ def feature_columns(df, verbose=True):
     return feature_cols, scale_cols
 
 
+# Variantes (variavel de ambiente GMD_VARIANT; saidas em GMD_OUT):
+#   main      (padrao) 6 preditores: sem media_suplemento_kg_dia (vazamento) e sem as variaveis
+#             constantes/quase constantes por fazenda (PB da forragem, valor de tabela; eventos de transporte).
+#   farmvars  8 preditores: main + PB da forragem + eventos de transporte.
+#   exante    main com a temperatura media do ciclo trocada pela CLIMATOLOGIA (media 2001-2019 por dia do ano)
+#             da janela entrada->saida planejada (dias e fracao de seca dependem so das datas planejadas).
+FARM_LEVEL = ["media_proteina_bruta_forragem_pct", "numero_eventos_transporte"]
+VARIANT = __import__("os").environ.get("GMD_VARIANT", "main")
+
+
+def _climatology_temp(df):
+    clim = pd.read_csv("data/climatologia_t2m_2001_2019.csv", index_col=0)["t2m_clim_c"]
+    out = []
+    for a, b in zip(pd.to_datetime(df["data_entrada"]), pd.to_datetime(df["data_saida"])):
+        days = pd.date_range(a, b)
+        out.append(float(np.mean([clim[f"{x.month:02d}-{x.day:02d}"] for x in days])))
+    return np.array(out)
+
+
 def get_data():
     """dict com df (completo), X, y, groups (id_propriedade), feature_cols, scale_cols."""
     df = load_raw()
-    feature_cols, scale_cols = feature_columns(df, verbose=False)
+    if VARIANT == "exante":
+        df["temperatura_media_c"] = _climatology_temp(df)
+    drop_extra = [] if VARIANT == "farmvars" else FARM_LEVEL
+    df_cols = df.drop(columns=[c for c in drop_extra if c in df.columns])
+    feature_cols, scale_cols = feature_columns(df_cols, verbose=False)
     return dict(df=df, X=df[feature_cols], y=df[TARGET], groups=df[GROUP],
                 feature_cols=feature_cols, scale_cols=scale_cols)
 

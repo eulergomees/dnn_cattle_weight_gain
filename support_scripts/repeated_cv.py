@@ -44,19 +44,36 @@ from xgboost import XGBRegressor
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import data_prep as dp
 
-OUT = "results"
+OUT = os.environ.get("GMD_OUT", "results")
 FOLDS_CSV = f"{OUT}/repeated_cv_folds.csv"
 OOF_CSV = f"{OUT}/repeated_cv_oof.csv"
 SUMMARY_CSV = f"{OUT}/repeated_cv_summary.csv"
 TESTS_CSV = f"{OUT}/repeated_cv_tests.csv"
-MODELS = ["Linear", "XGBoost", "MLP", "TabPFN"]
+MODELS = ["Mean", "FarmMean", "Linear", "XGBoost", "MLP", "TabPFN"]
+ML_MODELS = ["Linear", "XGBoost", "MLP", "TabPFN"]
 SCHEMES = ["farm", "cohort"]
 QUANTILES = [0.05, 0.95]                       # intervalo preditivo de 90% do TabPFN
 
-# configurações já escolhidas no estudo (mesmas do artigo)
-XGB_PARAMS = dict(n_estimators=200, max_depth=3, learning_rate=0.1, subsample=0.8,
-                  min_child_weight=1)
-MLP_CFG = dict(hidden=(128, 64, 32, 16), p_drop=0.0, lr=1e-2, batchnorm=True, wd=1e-4)
+# Configurações: o melhor da busca em grade (`grid_search.py`, maior R² médio nos 5 folds de dp.get_cv())
+# do conjunto de preditores em uso. Lidas de {GMD_CFG_DIR ou OUT}/grid_search_{xgb,dnn}.csv.
+def _load_best():
+    import ast
+    d = os.environ.get("GMD_CFG_DIR", OUT)
+    gx = pd.read_csv(f"{d}/grid_search_xgb.csv").iloc[0]
+    gd = pd.read_csv(f"{d}/grid_search_dnn.csv").iloc[0]
+    xgb = dict(n_estimators=int(gx.n_estimators), max_depth=int(gx.max_depth),
+               learning_rate=float(gx.learning_rate), subsample=float(gx.subsample),
+               min_child_weight=int(gx.min_child_weight))
+    mlp = dict(hidden=tuple(ast.literal_eval(gd.hidden)), p_drop=float(gd.p_drop), lr=float(gd.lr),
+               batchnorm=bool(gd.batchnorm), wd=float(gd.wd))
+    return xgb, mlp
+
+
+try:
+    XGB_PARAMS, MLP_CFG = _load_best()
+except FileNotFoundError:        # ainda sem busca em grade (ex.: ao rodar o proprio grid_search.py)
+    XGB_PARAMS = dict(n_estimators=200, max_depth=3, learning_rate=0.1, subsample=0.8, min_child_weight=1)
+    MLP_CFG = dict(hidden=(128, 64, 32, 16), p_drop=0.0, lr=1e-2, batchnorm=True, wd=1e-4)
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -154,6 +171,11 @@ def _mlp_one(tr_df, te_df, cols, seed, cfg=MLP_CFG):
 
 
 def predict(model_name, tr_df, te_df, cols, seed, n_ens):
+    if model_name == "Mean":        # baseline: media de GMD do treino
+        return dict(pred=np.full(len(te_df), tr_df[dp.TARGET].mean()))
+    if model_name == "FarmMean":    # baseline: media de GMD do treino da propria fazenda
+        m = tr_df.groupby(dp.GROUP)[dp.TARGET].mean()
+        return dict(pred=te_df[dp.GROUP].map(m).fillna(tr_df[dp.TARGET].mean()).values)
     if model_name == "Linear":
         m = make_pipeline(StandardScaler(), LinearRegression())
         return dict(pred=m.fit(tr_df[cols], tr_df[dp.TARGET]).predict(te_df[cols]))
@@ -252,15 +274,20 @@ def summarize(folds, oof):
     trows = []
     for scheme, g in folds.groupby("scheme"):
         wide = g.pivot_table(index=["repeat", "fold"], columns="model", values="MAE")
-        pairs = list(itertools.combinations(wide.columns, 2))
-        res = []
-        for a, b in pairs:
-            mean, se, t, p = nb_test((wide[a] - wide[b]).dropna())
-            res.append(dict(scheme=scheme, model_a=a, model_b=b, mean_diff_MAE=mean, se=se, t=t, p=p))
-        adj = holm([r["p"] for r in res])
-        for r, pa in zip(res, adj):
-            r["p_holm"] = pa
-            trows.append(r)
+        ml = [m for m in ML_MODELS if m in wide.columns]
+        families = [("ml", list(itertools.combinations(ml, 2)))]
+        if "FarmMean" in wide.columns:
+            families.append(("vs_farm_mean", [(m, "FarmMean") for m in ml]))
+        for fam, pairs in families:
+            res = []
+            for a, b in pairs:
+                mean, se, t, p = nb_test((wide[a] - wide[b]).dropna())
+                res.append(dict(scheme=scheme, family=fam, model_a=a, model_b=b, mean_diff_MAE=mean,
+                                se=se, t=t, p=p))
+            adj = holm([r["p"] for r in res])
+            for r, pa in zip(res, adj):
+                r["p_holm"] = pa
+                trows.append(r)
     return summary, pd.DataFrame(trows)
 
 

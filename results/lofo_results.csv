@@ -1,0 +1,11 @@
+model,test_farm,MAE,RMSE,R2
+Media_treino,elvis,0.0704,0.0926,-0.1499
+Linear,elvis,0.1232,0.1645,-2.6259
+XGBoost,elvis,0.086,0.1104,-0.6336
+MLP,elvis,0.077,0.1007,-0.3599
+TabPFN,elvis,0.0686,0.0896,-0.0767
+Media_treino,humberto,0.1155,0.1704,-0.0401
+Linear,humberto,0.1056,0.1485,0.2093
+XGBoost,humberto,0.0974,0.1321,0.3746
+MLP,humberto,0.093,0.1396,0.3019
+TabPFN,humberto,0.1041,0.1421,0.2762
